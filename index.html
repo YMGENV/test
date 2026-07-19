@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Wavecast — Live Room Streaming</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0d1013;
+    --panel: #161a20;
+    --panel-2: #1d222a;
+    --line: #2a3038;
+    --text: #e7ebef;
+    --muted: #7c8792;
+    --signal: #46d9c9;
+    --signal-dim: #2a7b73;
+    --live: #ff5d5d;
+    --amber: #f2b544;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(70,217,201,0.08), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(255,93,93,0.05), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100%;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .card{
+    background:linear-gradient(180deg, var(--panel-2), var(--panel));
+    border:1px solid var(--line);
+  }
+  .scanlines{
+    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+  }
+  .dial-digit{
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+  }
+  .btn{
+    transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease, border-color .15s ease;
+  }
+  .btn:active{ transform: scale(0.97); }
+  .btn:disabled{ opacity: 0.5; cursor: not-allowed; transform:none; }
+  .btn-primary{
+    background: var(--signal);
+    color:#06201d;
+  }
+  .btn-primary:hover{ box-shadow: 0 0 0 3px rgba(70,217,201,0.18); background:#57e3d3; }
+  .btn-outline{
+    background: transparent;
+    border:1px solid var(--line);
+    color: var(--text);
+  }
+  .btn-outline:hover{ border-color: var(--signal-dim); background: rgba(70,217,201,0.06); }
+  .btn-danger{
+    background: transparent;
+    border:1px solid rgba(255,93,93,0.4);
+    color: var(--live);
+  }
+  .btn-danger:hover{ background: rgba(255,93,93,0.1); border-color: var(--live); }
+  input:focus{ outline:none; }
+  .code-input{
+    background: #0a0c0f;
+    border:1px solid var(--line);
+  }
+  .code-input:focus{ border-color: var(--signal-dim); box-shadow: 0 0 0 3px rgba(70,217,201,0.12); }
+
+  @keyframes pulse-dot{
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:.45; transform:scale(0.85); }
+  }
+  .pulse{ animation: pulse-dot 1.6s ease-in-out infinite; }
+
+  @keyframes sweep{
+    0%{ transform: translateX(-100%); }
+    100%{ transform: translateX(100%); }
+  }
+  .sweep::after{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(90deg, transparent, rgba(70,217,201,0.12), transparent);
+    animation: sweep 2.2s linear infinite;
+  }
+
+  video{ background:#000; }
+  .video-frame{
+    border:1px solid var(--line);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 20px 60px -20px rgba(0,0,0,0.7);
+  }
+
+  .fade-in{ animation: fadeIn .35s ease both; }
+  @keyframes fadeIn{ from{opacity:0; transform: translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  ::selection{ background: rgba(70,217,201,0.3); }
+
+  @media (prefers-reduced-motion: reduce){
+    .pulse, .sweep::after{ animation: none !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<!-- Top bar -->
+<header class="w-full border-b border-[var(--line)]">
+  <div class="max-w-5xl mx-auto px-5 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-2.5 h-2.5 rounded-full bg-[var(--signal)]"></div>
+      <span class="mono text-sm tracking-[0.2em] text-[var(--muted)] uppercase">Wavecast</span>
+    </div>
+    <div id="connIndicator" class="hidden items-center gap-2 mono text-xs text-[var(--muted)]">
+      <span id="connDot" class="w-2 h-2 rounded-full bg-[var(--muted)]"></span>
+      <span id="connLabel">idle</span>
+    </div>
+  </div>
+</header>
+
+<main class="flex-1 flex items-start sm:items-center justify-center px-4 py-8 sm:py-10">
+
+  <!-- ============ LOBBY SCREEN ============ -->
+  <section id="lobbyScreen" class="w-full max-w-md fade-in">
+    <div class="mb-8 text-center">
+      <p class="mono text-[11px] tracking-[0.3em] text-[var(--signal)] uppercase mb-3">Peer to Peer · Live</p>
+      <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">Tune in to a room.</h1>
+      <p class="text-[var(--muted)] mt-2 text-sm">Enter a channel code to broadcast or watch a live camera feed.</p>
+    </div>
+
+    <div class="card rounded-2xl p-6 sm:p-7 relative overflow-hidden">
+      <div class="scanlines absolute inset-0 rounded-2xl"></div>
+      <div class="relative">
+        <label class="mono text-[11px] tracking-[0.2em] text-[var(--muted)] uppercase block mb-2">Channel Code</label>
+        <input id="roomCodeInput" type="text" maxlength="12" autocomplete="off" spellcheck="false"
+          placeholder="E.G. FOX-2214"
+          class="code-input w-full rounded-xl px-4 py-3.5 text-xl mono tracking-[0.15em] uppercase text-center dial-digit rounded-xl transition"
+        >
+        <p id="lobbyError" class="hidden text-[var(--live)] text-xs mt-2 mono"></p>
+
+        <div class="grid grid-cols-2 gap-3 mt-5">
+          <button id="joinSenderBtn" class="btn btn-primary rounded-xl py-3.5 font-semibold text-sm">
+            Join as Sender
+          </button>
+          <button id="joinViewerBtn" class="btn btn-outline rounded-xl py-3.5 font-semibold text-sm">
+            Join as Viewer
+          </button>
+        </div>
+
+        <div class="flex items-center gap-3 mt-6 pt-5 border-t border-[var(--line)]">
+          <div class="flex-1">
+            <p class="text-xs text-[var(--muted)] leading-relaxed">
+              <span class="text-[var(--signal)]">Sender</span> shares camera + mic.
+              <span class="text-[var(--signal)]">Viewer</span> only watches — no camera access requested.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SENDER SCREEN ============ -->
+  <section id="senderScreen" class="w-full max-w-3xl hidden fade-in">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div>
+        <p class="mono text-[11px] tracking-[0.3em] text-[var(--signal)] uppercase mb-1">On Air · Sender</p>
+        <h2 class="text-xl sm:text-2xl font-bold mono dial-digit">
+          CH <span id="senderRoomLabel">----</span>
+        </h2>
+      </div>
+      <div class="flex items-center gap-2 mono text-xs px-3 py-2 rounded-lg border border-[var(--line)]">
+        <span id="senderStatusDot" class="w-2 h-2 rounded-full bg-[var(--amber)] pulse"></span>
+        <span id="senderStatusLabel" class="text-[var(--muted)]">waiting for viewer…</span>
+      </div>
+    </div>
+
+    <div class="video-frame rounded-2xl overflow-hidden relative aspect-video">
+      <video id="localVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+      <div class="absolute top-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur px-2.5 py-1 rounded-md mono text-[11px] tracking-widest">
+        <span class="w-1.5 h-1.5 rounded-full bg-[var(--live)] pulse"></span> LIVE PREVIEW
+      </div>
+    </div>
+
+    <p id="senderError" class="hidden text-[var(--live)] text-sm mt-4 mono"></p>
+
+    <div class="flex justify-center gap-3 mt-6 flex-wrap">
+      <button id="muteSenderBtn" class="btn btn-outline rounded-xl px-6 py-3 font-semibold text-sm flex items-center gap-2">
+        <span id="muteSenderIcon">🎙️</span> <span id="muteSenderLabel">Mute Mic</span>
+      </button>
+      <button id="flipCameraBtn" class="btn btn-outline rounded-xl px-6 py-3 font-semibold text-sm flex items-center gap-2">
+        <span>🔄</span> <span>Flip Camera</span>
+      </button>
+      <button id="stopSenderBtn" class="btn btn-danger rounded-xl px-6 py-3 font-semibold text-sm">
+        Stop Streaming
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ VIEWER SCREEN ============ -->
+  <section id="viewerScreen" class="w-full max-w-3xl hidden fade-in">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div>
+        <p class="mono text-[11px] tracking-[0.3em] text-[var(--signal)] uppercase mb-1">Watching · Viewer</p>
+        <h2 class="text-xl sm:text-2xl font-bold mono dial-digit">
+          CH <span id="viewerRoomLabel">----</span>
+        </h2>
+      </div>
+      <div class="flex items-center gap-2 mono text-xs px-3 py-2 rounded-lg border border-[var(--line)]">
+        <span id="viewerStatusDot" class="w-2 h-2 rounded-full bg-[var(--amber)] pulse"></span>
+        <span id="viewerStatusLabel" class="text-[var(--muted)]">connecting…</span>
+      </div>
+    </div>
+
+    <div class="video-frame rounded-2xl overflow-hidden relative aspect-video flex items-center justify-center">
+      <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+      <div id="viewerWaiting" class="absolute inset-0 flex flex-col items-center justify-center gap-4 sweep">
+        <div class="w-14 h-14 rounded-full border-2 border-[var(--signal-dim)] border-t-[var(--signal)] animate-spin"></div>
+        <p class="mono text-sm text-[var(--muted)] text-center px-6">
+          Waiting for sender to join room <span id="viewerWaitCode" class="text-[var(--signal)]">----</span>…
+        </p>
+      </div>
+    </div>
+
+    <p id="viewerError" class="hidden text-[var(--live)] text-sm mt-4 mono"></p>
+
+    <div class="flex justify-center gap-3 mt-6">
+      <button id="muteViewerBtn" class="btn btn-outline rounded-xl px-6 py-3 font-semibold text-sm flex items-center gap-2">
+        <span id="muteViewerIcon">🔊</span> <span id="muteViewerLabel">Mute</span>
+      </button>
+      <button id="disconnectViewerBtn" class="btn btn-danger rounded-xl px-6 py-3 font-semibold text-sm">
+        Disconnect
+      </button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="w-full py-5 text-center">
+  <p class="mono text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase">Signal carried over WebRTC · Routed via Supabase Realtime</p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Supabase setup ----------
+  const SUPABASE_URL = "https://qymmzjoudifiaoayiymz.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_jk33xLKr-D_zLcnlaY8Ukw_tuJ6HsHU";
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const ICE_SERVERS = {
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ]
+  };
+
+  // ---------- Socket.io realtime server ----------
+  const SOCKET_SERVER_URL = "https://ar-2sus.onrender.com";
+  let socket = null;
+
+  function connectSocket(roomCode, deviceType){
+    if(socket){
+      try{ socket.disconnect(); }catch(e){}
+    }
+
+    socket = io(SOCKET_SERVER_URL, {
+      transports: ['websocket', 'polling']
+    });
+
+    socket.on('connect', () => {
+      console.log('[socket] connected:', socket.id);
+      socket.emit('join-room', { roomCode, deviceType });
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('[socket] disconnected:', reason);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('[socket] connection error:', err.message || err);
+    });
+
+    // Incoming data relayed from the other device(s) in the room
+    socket.on('receive-payload', (data) => {
+      handleIncomingPayload(data);
+    });
+
+    // Room membership / status changes (e.g. peer joined/left)
+    socket.on('room-updated', (data) => {
+      handleRoomUpdate(data);
+    });
+
+    return socket;
+  }
+
+  function disconnectSocket(){
+    if(socket){
+      try{ socket.disconnect(); }catch(e){}
+      socket = null;
+    }
+  }
+
+  // Send real-time data to the rest of the room
+  function sendPayload(data){
+    if(!socket || !socket.connected){
+      console.warn('[socket] cannot send payload — not connected');
+      return;
+    }
+    socket.emit('send-payload', {
+      roomCode: state.roomCode,
+      ...data
+    });
+  }
+
+  // Hook: called whenever data arrives from another device in the room.
+  // Wire this up to whatever live UI elements need to stay in sync.
+  function handleIncomingPayload(data){
+    console.log('[socket] receive-payload:', data);
+  }
+
+  // Hook: called whenever the server reports a change in room state
+  // (e.g. sender/viewer connected or disconnected). Wire this up to
+  // your connection indicators / status labels as needed.
+  function handleRoomUpdate(data){
+    console.log('[socket] room-updated:', data);
+  }
+
+  // ---------- DOM ----------
+  const el = (id) => document.getElementById(id);
+
+  const lobbyScreen = el("lobbyScreen");
+  const senderScreen = el("senderScreen");
+  const viewerScreen = el("viewerScreen");
+
+  const roomCodeInput = el("roomCodeInput");
+  const lobbyError = el("lobbyError");
+  const joinSenderBtn = el("joinSenderBtn");
+  const joinViewerBtn = el("joinViewerBtn");
+
+  const localVideo = el("localVideo");
+  const senderRoomLabel = el("senderRoomLabel");
+  const senderStatusDot = el("senderStatusDot");
+  const senderStatusLabel = el("senderStatusLabel");
+  const senderError = el("senderError");
+  const stopSenderBtn = el("stopSenderBtn");
+  const muteSenderBtn = el("muteSenderBtn");
+  const muteSenderIcon = el("muteSenderIcon");
+  const muteSenderLabel = el("muteSenderLabel");
+  const flipCameraBtn = el("flipCameraBtn");
+
+  const remoteVideo = el("remoteVideo");
+  const viewerRoomLabel = el("viewerRoomLabel");
+  const viewerWaitCode = el("viewerWaitCode");
+  const viewerWaiting = el("viewerWaiting");
+  const viewerStatusDot = el("viewerStatusDot");
+  const viewerStatusLabel = el("viewerStatusLabel");
+  const viewerError = el("viewerError");
+  const disconnectViewerBtn = el("disconnectViewerBtn");
+  const muteViewerBtn = el("muteViewerBtn");
+  const muteViewerIcon = el("muteViewerIcon");
+  const muteViewerLabel = el("muteViewerLabel");
+
+  const connIndicator = el("connIndicator");
+  const connDot = el("connDot");
+  const connLabel = el("connLabel");
+
+  // ---------- State ----------
+  let state = {
+    role: null,        // 'sender' | 'viewer'
+    roomCode: null,
+    clientId: null,
+    channel: null,
+    pc: null,
+    localStream: null,
+    remoteHasJoinedPresence: false,
+    pendingIceQueue: [],
+    remoteDescSet: false,
+    peerPresent: false,
+    facingMode: 'user',
+    isFlippingCamera: false,
+  };
+
+  function genClientId(){
+    return 'c-' + Math.random().toString(36).slice(2, 10);
+  }
+
+  function showScreen(name){
+    lobbyScreen.classList.add('hidden');
+    senderScreen.classList.add('hidden');
+    viewerScreen.classList.add('hidden');
+    connIndicator.classList.remove('flex');
+    connIndicator.classList.add('hidden');
+    if(name === 'lobby') lobbyScreen.classList.remove('hidden');
+    if(name === 'sender'){ senderScreen.classList.remove('hidden'); connIndicator.classList.remove('hidden'); connIndicator.classList.add('flex'); }
+    if(name === 'viewer'){ viewerScreen.classList.remove('hidden'); connIndicator.classList.remove('hidden'); connIndicator.classList.add('flex'); }
+  }
+
+  function setTopConn(status){
+    // status: idle | connecting | connected | error
+    const map = {
+      idle: ['bg-[var(--muted)]', 'idle'],
+      connecting: ['bg-[var(--amber)] pulse', 'connecting'],
+      connected: ['bg-[var(--signal)]', 'connected'],
+      error: ['bg-[var(--live)]', 'error'],
+    };
+    const [cls, label] = map[status] || map.idle;
+    connDot.className = 'w-2 h-2 rounded-full ' + cls;
+    connLabel.textContent = label;
+  }
+
+  function showLobbyError(msg){
+    lobbyError.textContent = msg;
+    lobbyError.classList.remove('hidden');
+  }
+  function clearLobbyError(){
+    lobbyError.classList.add('hidden');
+  }
+
+  function normalizeRoomCode(raw){
+    return raw.trim().toUpperCase().replace(/[^A-Z0-9\-]/g, '');
+  }
+
+  // ---------- Cleanup ----------
+  function cleanup(){
+    disconnectSocket();
+    try{
+      if(state.pc){
+        state.pc.ontrack = null;
+        state.pc.onicecandidate = null;
+        state.pc.oniceconnectionstatechange = null;
+        state.pc.close();
+      }
+    }catch(e){}
+    try{
+      if(state.localStream){
+        state.localStream.getTracks().forEach(t => t.stop());
+      }
+    }catch(e){}
+    try{
+      if(state.channel){
+        state.channel.untrack().catch(()=>{});
+        supabase.removeChannel(state.channel);
+      }
+    }catch(e){}
+
+    localVideo.srcObject = null;
+    remoteVideo.srcObject = null;
+
+    state = {
+      role: null,
+      roomCode: null,
+      clientId: null,
+      channel: null,
+      pc: null,
+      localStream: null,
+      remoteHasJoinedPresence: false,
+      pendingIceQueue: [],
+      remoteDescSet: false,
+      peerPresent: false,
+    };
+  }
+
+  function backToLobby(){
+    cleanup();
+    roomCodeInput.value = '';
+    clearLobbyError();
+    senderError.classList.add('hidden');
+    viewerError.classList.add('hidden');
+    showScreen('lobby');
+  }
+
+  window.addEventListener('beforeunload', cleanup);
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'hidden' && state.role){
+      // best-effort presence flush; do not fully cleanup so brief tab switches don't kill stream
+    }
+  });
+
+  // ---------- Peer connection factory ----------
+  function createPeerConnection(onIceCandidate){
+    const pc = new RTCPeerConnection(ICE_SERVERS);
+    pc.onicecandidate = (event) => {
+      if(event.candidate){
+        onIceCandidate(event.candidate);
+      }
+    };
+    pc.oniceconnectionstatechange = () => {
+      const st = pc.iceConnectionState;
+      if(st === 'connected' || st === 'completed'){
+        setTopConn('connected');
+        if(state.role === 'sender'){
+          senderStatusDot.className = 'w-2 h-2 rounded-full bg-[var(--signal)]';
+          senderStatusLabel.textContent = 'streaming to viewer';
+          senderStatusLabel.classList.remove('text-[var(--muted)]');
+        }
+        if(state.role === 'viewer'){
+          viewerStatusDot.className = 'w-2 h-2 rounded-full bg-[var(--signal)]';
+          viewerStatusLabel.textContent = 'connected';
+        }
+      } else if(st === 'disconnected'){
+        setTopConn('connecting');
+      } else if(st === 'failed'){
+        setTopConn('error');
+        const msg = 'Connection failed. The peer may have left, or a network/firewall issue is blocking the stream.';
+        if(state.role === 'sender') showSenderError(msg);
+        if(state.role === 'viewer') showViewerError(msg);
+      }
+    };
+    return pc;
+  }
+
+  function showSenderError(msg){
+    senderError.textContent = msg;
+    senderError.classList.remove('hidden');
+  }
+  function showViewerError(msg){
+    viewerError.textContent = msg;
+    viewerError.classList.remove('hidden');
+  }
+
+  async function flushIceQueue(pc){
+    while(state.pendingIceQueue.length){
+      const cand = state.pendingIceQueue.shift();
+      try{ await pc.addIceCandidate(new RTCIceCandidate(cand)); }
+      catch(e){ console.warn('addIceCandidate failed', e); }
+    }
+  }
+
+  // ================= SENDER FLOW =================
+  async function startSender(roomCode){
+    state.role = 'sender';
+    state.roomCode = roomCode;
+    state.clientId = genClientId();
+
+    senderRoomLabel.textContent = roomCode;
+    showScreen('sender');
+    setTopConn('connecting');
+    senderStatusDot.className = 'w-2 h-2 rounded-full bg-[var(--amber)] pulse';
+    senderStatusLabel.textContent = 'waiting for viewer…';
+    senderStatusLabel.classList.add('text-[var(--muted)]');
+    senderError.classList.add('hidden');
+    muteSenderIcon.textContent = '🎙️';
+    muteSenderLabel.textContent = 'Mute Mic';
+    muteSenderBtn.classList.remove('btn-danger');
+    muteSenderBtn.classList.add('btn-outline');
+    state.facingMode = 'user';
+
+    // Connect to the realtime Socket.io server for this room
+    connectSocket(roomCode, 'sender');
+
+    // 1. Get camera/mic
+    let stream;
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: state.facingMode },
+        audio: true
+      });
+    }catch(err){
+      showSenderError('Camera/microphone access was denied or unavailable. Please allow permissions and try again.');
+      setTopConn('error');
+      return;
+    }
+    state.localStream = stream;
+    localVideo.srcObject = stream;
+
+    // 2. Peer connection
+    const pc = createPeerConnection((candidate) => {
+      state.channel.send({
+        type: 'broadcast',
+        event: 'signal',
+        payload: { kind: 'ice-candidate-sender', candidate, from: state.clientId }
+      });
+    });
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+    state.pc = pc;
+
+    // 3. Signaling channel
+    const channel = supabase.channel('room-' + roomCode, {
+      config: { presence: { key: state.clientId }, broadcast: { self: false } }
+    });
+    state.channel = channel;
+
+    channel.on('broadcast', { event: 'signal' }, async ({ payload }) => {
+      if(!payload) return;
+      try{
+        if(payload.kind === 'answer'){
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.answer));
+          state.remoteDescSet = true;
+          await flushIceQueue(pc);
+        } else if(payload.kind === 'ice-candidate-viewer'){
+          if(state.remoteDescSet){
+            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+          } else {
+            state.pendingIceQueue.push(payload.candidate);
+          }
+        }
+      }catch(e){
+        console.error('Sender signal handling error', e);
+      }
+    });
+
+    channel.on('presence', { event: 'sync' }, () => {
+      const presenceState = channel.presenceState();
+      let viewerFound = false;
+      Object.values(presenceState).forEach(entries => {
+        entries.forEach(entry => { if(entry.role === 'viewer') viewerFound = true; });
+      });
+      if(viewerFound && !state.peerPresent){
+        state.peerPresent = true;
+        initiateOfferToViewer(pc, channel);
+      }
+    });
+
+    channel.subscribe(async (status) => {
+      if(status === 'SUBSCRIBED'){
+        await channel.track({ role: 'sender', joinedAt: Date.now() });
+      }
+      if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+        showSenderError('Lost connection to the signaling server. Please stop and try again.');
+        setTopConn('error');
+      }
+    });
+  }
+
+  async function initiateOfferToViewer(pc, channel){
+    senderStatusLabel.textContent = 'viewer found — connecting…';
+    try{
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      channel.send({
+        type: 'broadcast',
+        event: 'signal',
+        payload: { kind: 'offer', offer, from: state.clientId }
+      });
+    }catch(e){
+      showSenderError('Failed to start the connection with the viewer. Try stopping and starting again.');
+      console.error(e);
+    }
+  }
+
+  stopSenderBtn.addEventListener('click', backToLobby);
+
+  flipCameraBtn.addEventListener('click', async () => {
+    if(!state.localStream || !state.pc || state.isFlippingCamera) return;
+    state.isFlippingCamera = true;
+    flipCameraBtn.disabled = true;
+
+    const newFacingMode = state.facingMode === 'user' ? 'environment' : 'user';
+    let newStream;
+    try{
+      newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: newFacingMode },
+        audio: false
+      });
+    }catch(err){
+      showSenderError('Could not switch camera. Your device may only have one camera, or access was blocked.');
+      state.isFlippingCamera = false;
+      flipCameraBtn.disabled = false;
+      return;
+    }
+
+    const newVideoTrack = newStream.getVideoTracks()[0];
+    const oldVideoTrack = state.localStream.getVideoTracks()[0];
+
+    try{
+      const sender = state.pc.getSenders().find(s => s.track && s.track.kind === 'video');
+      if(sender){
+        await sender.replaceTrack(newVideoTrack);
+      }
+    }catch(e){
+      console.error('replaceTrack failed', e);
+    }
+
+    // Swap track into the local stream so the preview + future references stay in sync
+    if(oldVideoTrack){
+      state.localStream.removeTrack(oldVideoTrack);
+      oldVideoTrack.stop();
+    }
+    state.localStream.addTrack(newVideoTrack);
+    localVideo.srcObject = state.localStream;
+
+    state.facingMode = newFacingMode;
+    state.isFlippingCamera = false;
+    flipCameraBtn.disabled = false;
+  });
+
+  muteSenderBtn.addEventListener('click', () => {
+    if(!state.localStream) return;
+    const audioTracks = state.localStream.getAudioTracks();
+    if(!audioTracks.length) return;
+    const nowEnabled = !audioTracks[0].enabled;
+    audioTracks.forEach(t => t.enabled = nowEnabled);
+    if(nowEnabled){
+      muteSenderIcon.textContent = '🎙️';
+      muteSenderLabel.textContent = 'Mute Mic';
+      muteSenderBtn.classList.remove('btn-danger');
+      muteSenderBtn.classList.add('btn-outline');
+    } else {
+      muteSenderIcon.textContent = '🔇';
+      muteSenderLabel.textContent = 'Unmute Mic';
+      muteSenderBtn.classList.remove('btn-outline');
+      muteSenderBtn.classList.add('btn-danger');
+    }
+  });
+
+  // ================= VIEWER FLOW =================
+  async function startViewer(roomCode){
+    state.role = 'viewer';
+    state.roomCode = roomCode;
+    state.clientId = genClientId();
+
+    viewerRoomLabel.textContent = roomCode;
+    viewerWaitCode.textContent = roomCode;
+    showScreen('viewer');
+    setTopConn('connecting');
+    viewerStatusDot.className = 'w-2 h-2 rounded-full bg-[var(--amber)] pulse';
+    viewerStatusLabel.textContent = 'waiting for sender…';
+    viewerWaiting.classList.remove('hidden');
+    viewerError.classList.add('hidden');
+    remoteVideo.muted = false;
+    muteViewerIcon.textContent = '🔊';
+    muteViewerLabel.textContent = 'Mute';
+    muteViewerBtn.classList.remove('btn-danger');
+    muteViewerBtn.classList.add('btn-outline');
+
+    // Connect to the realtime Socket.io server for this room
+    connectSocket(roomCode, 'viewer');
+
+    const pc = createPeerConnection((candidate) => {
+      state.channel.send({
+        type: 'broadcast',
+        event: 'signal',
+        payload: { kind: 'ice-candidate-viewer', candidate, from: state.clientId }
+      });
+    });
+
+    pc.ontrack = (event) => {
+      remoteVideo.srcObject = event.streams[0];
+      viewerWaiting.classList.add('hidden');
+      viewerStatusLabel.textContent = 'receiving stream…';
+    };
+    state.pc = pc;
+
+    const channel = supabase.channel('room-' + roomCode, {
+      config: { presence: { key: state.clientId }, broadcast: { self: false } }
+    });
+    state.channel = channel;
+
+    channel.on('broadcast', { event: 'signal' }, async ({ payload }) => {
+      if(!payload) return;
+      try{
+        if(payload.kind === 'offer'){
+          viewerStatusLabel.textContent = 'sender found — connecting…';
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.offer));
+          state.remoteDescSet = true;
+          await flushIceQueue(pc);
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          channel.send({
+            type: 'broadcast',
+            event: 'signal',
+            payload: { kind: 'answer', answer, from: state.clientId }
+          });
+        } else if(payload.kind === 'ice-candidate-sender'){
+          if(state.remoteDescSet){
+            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+          } else {
+            state.pendingIceQueue.push(payload.candidate);
+          }
+        }
+      }catch(e){
+        console.error('Viewer signal handling error', e);
+      }
+    });
+
+    channel.subscribe(async (status) => {
+      if(status === 'SUBSCRIBED'){
+        await channel.track({ role: 'viewer', joinedAt: Date.now() });
+      }
+      if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+        showViewerError('Lost connection to the signaling server. Please disconnect and try again.');
+        setTopConn('error');
+      }
+    });
+
+    // Fallback timeout: if nothing happens for a while, hint at troubleshooting
+    setTimeout(() => {
+      if(state.role === 'viewer' && !remoteVideo.srcObject){
+        viewerStatusLabel.textContent = 'still waiting for sender…';
+      }
+    }, 15000);
+  }
+
+  disconnectViewerBtn.addEventListener('click', backToLobby);
+
+  muteViewerBtn.addEventListener('click', () => {
+    remoteVideo.muted = !remoteVideo.muted;
+    if(remoteVideo.muted){
+      muteViewerIcon.textContent = '🔇';
+      muteViewerLabel.textContent = 'Unmute';
+      muteViewerBtn.classList.remove('btn-outline');
+      muteViewerBtn.classList.add('btn-danger');
+    } else {
+      muteViewerIcon.textContent = '🔊';
+      muteViewerLabel.textContent = 'Mute';
+      muteViewerBtn.classList.remove('btn-danger');
+      muteViewerBtn.classList.add('btn-outline');
+    }
+  });
+
+  // ================= LOBBY WIRING =================
+  function validateAndGetCode(){
+    const raw = roomCodeInput.value;
+    const code = normalizeRoomCode(raw);
+    if(!code || code.length < 3){
+      showLobbyError('Enter a room code (at least 3 characters, letters/numbers).');
+      return null;
+    }
+    clearLobbyError();
+    return code;
+  }
+
+  joinSenderBtn.addEventListener('click', () => {
+    const code = validateAndGetCode();
+    if(!code) return;
+    startSender(code);
+  });
+
+  joinViewerBtn.addEventListener('click', () => {
+    const code = validateAndGetCode();
+    if(!code) return;
+    startViewer(code);
+  });
+
+  roomCodeInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+      const code = validateAndGetCode();
+      if(code) startSender(code);
+    }
+  });
+
+  roomCodeInput.addEventListener('input', clearLobbyError);
+
+  // Initial screen
+  showScreen('lobby');
+})();
+</script>
+</body>
+</html>
