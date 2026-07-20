@@ -355,6 +355,9 @@
 
   // ---- Per-plan email buttons ----
   async function emailAboutPlan(planName, btn){
+    const name = window.prompt("What's your name?");
+    if (!name || !name.trim()) return;
+
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.textContent = 'Sending...';
@@ -364,9 +367,10 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          _subject: `${planName} plan — when can we start?`,
+          _subject: `${planName} plan — when can we start? (${name.trim()})`,
+          name: name.trim(),
           plan: planName,
-          message: `I'd like to get started with the ${planName} plan. When can we begin?`,
+          message: `${name.trim()} would like to get started with the ${planName} plan. When can we begin?`,
           sentAt: new Date().toISOString()
         })
       });
