@@ -232,9 +232,6 @@
   <div class="wrap">
     <h1>Websites <span class="hl">forged</span>, not templated.</h1>
     <p>We design and build sites for small businesses and side projects — fast, a little weird, and actually fun to click around in.</p>
-    <div class="hero-ctas">
-      <button class="btn-primary" onclick="document.getElementById('idea').scrollIntoView()">Pitch us your idea</button>
-    </div>
   </div>
 </header>
 
@@ -277,17 +274,17 @@
         <span class="slider"></span>
       </label>
       <div class="label">
-        Add a custom domain <b>+$150/yr</b>
+        Add a custom domain <b>+₹2,500/yr</b>
         <small>We'll register and connect yourname.com instead of the free ymgenv.github.io domain.</small>
       </div>
     </div>
 
     <div class="price-grid">
-      <div class="price-card" data-base="490">
+      <div class="price-card" data-base="9999">
         <div class="spec-id">SPEC 01 · STARTER</div>
         <h3>One-pager</h3>
         <div class="desc">A single sharp landing page. Good for launches and small services.</div>
-        <div class="price-amt"><span class="num">$<span class="amount">490</span></span><span class="cycle">one-time</span></div>
+        <div class="price-amt"><span class="num">₹<span class="amount">9,999</span></span><span class="cycle">one-time</span></div>
         <div class="price-addon-note"></div>
         <ul>
           <li>1 custom-designed page</li>
@@ -295,18 +292,15 @@
           <li>Free ymgenv.github.io domain</li>
           <li>2 rounds of revisions</li>
         </ul>
-        <button class="price-btn" onclick="pickPlan('One-pager')">Choose one-pager</button>
-        <button type="button" class="price-email-btn" onclick="emailAboutPlan('One-pager', this)">
-          <span aria-hidden="true">✉</span> Email about this plan
-        </button>
+        <button class="price-btn" onclick="emailAboutPlan('One-pager', this)">Choose one-pager</button>
       </div>
 
-      <div class="price-card featured" data-base="1450">
+      <div class="price-card featured" data-base="29999">
         <div class="badge">Most booked</div>
         <div class="spec-id">SPEC 02 · GROWTH</div>
         <h3>Full site</h3>
         <div class="desc">Up to 6 pages, built for a real small business that wants to look the part.</div>
-        <div class="price-amt"><span class="num">$<span class="amount">1,450</span></span><span class="cycle">one-time</span></div>
+        <div class="price-amt"><span class="num">₹<span class="amount">29,999</span></span><span class="cycle">one-time</span></div>
         <div class="price-addon-note"></div>
         <ul>
           <li>Up to 6 pages</li>
@@ -315,17 +309,14 @@
           <li>4 rounds of revisions</li>
           <li>30 days of support after launch</li>
         </ul>
-        <button class="price-btn" onclick="pickPlan('Full site')">Choose full site</button>
-        <button type="button" class="price-email-btn" onclick="emailAboutPlan('Full site', this)">
-          <span aria-hidden="true">✉</span> Email about this plan
-        </button>
+        <button class="price-btn" onclick="emailAboutPlan('Full site', this)">Choose full site</button>
       </div>
 
-      <div class="price-card" data-base="3200">
+      <div class="price-card" data-base="59999">
         <div class="spec-id">CUSTOM</div>
         <h3>Full build</h3>
         <div class="desc">Bigger sites, stores, or anything with custom features and moving parts.</div>
-        <div class="price-amt"><span class="num">$<span class="amount">3,200</span></span><span class="cycle">starting at</span></div>
+        <div class="price-amt"><span class="num">₹<span class="amount">59,999</span>+</span><span class="cycle">starting at</span></div>
         <div class="price-addon-note"></div>
         <ul>
           <li>Unlimited pages</li>
@@ -333,46 +324,7 @@
           <li>Custom interactions</li>
           <li>90 days of support after launch</li>
         </ul>
-        <button class="price-btn" onclick="pickPlan('Custom build')">Choose custom build</button>
-        <button type="button" class="price-email-btn" onclick="emailAboutPlan('Custom build', this)">
-          <span aria-hidden="true">✉</span> Email about this plan
-        </button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section" id="idea">
-  <div class="wrap">
-    <div class="idea-wrap">
-      <div class="idea-inner">
-        <h2>Tell us what you're building</h2>
-        <p>Drop your idea below — even if it's messy. We'll reply with next steps and a rough quote.</p>
-
-        <form id="ideaForm">
-          <div class="field-row">
-            <div class="field">
-              <label class="field-label" for="name">Your name</label>
-              <input type="text" id="name" name="name" placeholder="Jordan Lee" required>
-            </div>
-            <div class="field">
-              <label class="field-label" for="email">Email</label>
-              <input type="email" id="email" name="email" placeholder="jordan@email.com" required>
-            </div>
-          </div>
-          <div class="field">
-            <label class="field-label" for="plan">Interested in</label>
-            <input type="text" id="plan" name="plan" placeholder="One-pager, Full site, Custom build...">
-          </div>
-          <div class="field">
-            <label class="field-label" for="idea">Your idea</label>
-            <textarea id="idea" name="idea" placeholder="What's the business or project? What should the site do?" required></textarea>
-          </div>
-          <div class="submit-row">
-            <button type="submit" class="btn-primary" id="submitBtn">Send it over</button>
-            <span id="formStatus"></span>
-          </div>
-        </form>
+        <button class="price-btn" onclick="emailAboutPlan('Custom build', this)">Choose custom build</button>
       </div>
     </div>
   </div>
@@ -387,7 +339,7 @@
 
 <script>
   // ---- Pricing ----
-  const DOMAIN_ADDON = 150;
+  const DOMAIN_ADDON = 2500;
 
   function updatePrices(){
     const addDomain = document.getElementById('domainToggle').checked;
@@ -397,14 +349,8 @@
       const noteEl = card.querySelector('.price-addon-note');
       const total = addDomain ? base + DOMAIN_ADDON : base;
       amountEl.textContent = total.toLocaleString();
-      noteEl.textContent = addDomain ? `includes custom domain (+$${DOMAIN_ADDON}/yr)` : '';
+      noteEl.textContent = addDomain ? `includes custom domain (+₹${DOMAIN_ADDON.toLocaleString()}/yr)` : '';
     });
-  }
-
-  function pickPlan(planName){
-    document.getElementById('plan').value = planName;
-    document.getElementById('idea').scrollIntoView({behavior:'smooth'});
-    document.getElementById('idea').focus({preventScroll:true});
   }
 
   // ---- Per-plan email buttons ----
@@ -436,60 +382,6 @@
       }, 3000);
     }
   }
-
-  // ---- Form submission ----
-  // Sends straight to your inbox via FormSubmit (no backend needed).
-  // IMPORTANT: the first submission triggers a one-time confirmation email
-  // to yogitmeenawat2@gmail.com — click "Activate form" in it once, after
-  // that every future submission arrives normally.
-  //
-  // Once your own Render server is ready, swap this back to it, e.g.
-  // "https://ymgenvforge-api.onrender.com/api/ideas"
-  const SERVER_URL = "https://formsubmit.co/ajax/yogitmeenawat2@gmail.com";
-
-  const form = document.getElementById('ideaForm');
-  const statusEl = document.getElementById('formStatus');
-  const submitBtn = document.getElementById('submitBtn');
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    statusEl.className = '';
-    statusEl.textContent = '';
-
-    const domainToggle = document.getElementById('domainToggle').checked;
-    const payload = {
-      name: document.getElementById('name').value.trim(),
-      email: document.getElementById('email').value.trim(),
-      plan: document.getElementById('plan').value.trim(),
-      idea: document.getElementById('idea').value.trim(),
-      wantsCustomDomain: domainToggle,
-      submittedAt: new Date().toISOString()
-    };
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Sending...';
-
-    try {
-      const res = await fetch(SERVER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) throw new Error('Server responded with ' + res.status);
-
-      statusEl.textContent = "Sent — we'll be in touch soon.";
-      statusEl.className = 'ok';
-      form.reset();
-    } catch (err) {
-      statusEl.textContent = "Couldn't send that. Check your connection and try again.";
-      statusEl.className = 'err';
-      console.error(err);
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Send it over';
-    }
-  });
 </script>
 
 </body>
