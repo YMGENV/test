@@ -2,856 +2,495 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-<title>Wavecast — Live Room Streaming</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YMGENV Forge — websites, built on the spot</title>
+<meta name="description" content="YMGENV Forge builds fun, fast websites for small businesses and side projects.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg: #0d1013;
-    --panel: #161a20;
-    --panel-2: #1d222a;
-    --line: #2a3038;
-    --text: #e7ebef;
-    --muted: #7c8792;
-    --signal: #46d9c9;
-    --signal-dim: #2a7b73;
-    --live: #ff5d5d;
-    --amber: #f2b544;
+    --ink:#0F2A3D;
+    --paper:#EAF0FF;
+    --blue:#12102B;
+    --blue-line: rgba(234,240,255,0.14);
+    --orange:#8B5CF6;
+    --orange-dark:#6D3FE0;
+    --yellow:#42E8E0;
+    --mint:#5EEAD4;
+    --card:#1B1840;
+    --card-line: rgba(234,240,255,0.12);
+    --radius: 10px;
   }
   *{box-sizing:border-box;}
-  html,body{height:100%;}
+  html{scroll-behavior:smooth;}
   body{
-    background:
-      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(70,217,201,0.08), transparent 60%),
-      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(255,93,93,0.05), transparent 55%),
-      var(--bg);
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-    -webkit-font-smoothing:antialiased;
-    min-height:100%;
+    margin:0;
+    background:var(--blue);
+    color:var(--paper);
+    font-family:'Space Grotesk', sans-serif;
+    line-height:1.55;
   }
-  .mono{font-family:'JetBrains Mono',monospace;}
-  .card{
-    background:linear-gradient(180deg, var(--panel-2), var(--panel));
-    border:1px solid var(--line);
+  .grid-bg{
+    background-image:
+      linear-gradient(var(--blue-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--blue-line) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
-  .scanlines{
-    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px);
-    pointer-events:none;
+  h1,h2,h3{
+    font-family:'Archivo Black', sans-serif;
+    font-weight:400;
+    line-height:1.05;
+    margin:0;
+    letter-spacing:-0.01em;
   }
-  .dial-digit{
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.08em;
+  .mono{ font-family:'JetBrains Mono', monospace; }
+  a{color:inherit;}
+  .wrap{ max-width:1080px; margin:0 auto; padding:0 24px; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--orange);
   }
-  .btn{
-    transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease, border-color .15s ease;
+  .eyebrow::before{ content:"◆"; font-size:10px; }
+
+  /* NAV */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(24,58,86,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--blue-line);
   }
-  .btn:active{ transform: scale(0.97); }
-  .btn:disabled{ opacity: 0.5; cursor: not-allowed; transform:none; }
+  nav .wrap{ display:flex; align-items:center; justify-content:space-between; height:68px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-family:'Archivo Black'; font-size:20px; }
+  .brand-mark{
+    width:30px; height:30px; background:var(--orange); border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono'; font-weight:700; font-size:14px; color:var(--blue);
+    transform:rotate(-6deg);
+  }
+  .nav-links{ display:flex; gap:28px; font-size:14px; }
+  .nav-links a{ text-decoration:none; opacity:0.8; transition:opacity .15s; }
+  .nav-links a:hover{ opacity:1; }
+  .nav-cta{
+    background:var(--orange); color:var(--blue); padding:9px 18px; border-radius:8px;
+    font-size:14px; font-weight:600; text-decoration:none; border:none; cursor:pointer;
+    font-family:'Space Grotesk';
+  }
+
+  /* HERO */
+  .hero{ padding:96px 0 80px; position:relative; overflow:hidden; }
+  .hero .wrap{ position:relative; z-index:2; }
+  .hero h1{
+    font-size:clamp(40px, 6vw, 72px);
+    max-width:820px;
+    margin-top:18px;
+  }
+  .hero h1 .hl{ color:var(--orange); }
+  .hero p{ max-width:520px; font-size:18px; color:rgba(234,240,255,0.75); margin-top:22px; }
+  .hero-ctas{ display:flex; gap:14px; margin-top:32px; flex-wrap:wrap; }
   .btn-primary{
-    background: var(--signal);
-    color:#06201d;
+    background:var(--orange); color:var(--blue); border:none; padding:14px 26px;
+    border-radius:8px; font-size:16px; font-weight:600; cursor:pointer; font-family:'Space Grotesk';
+    box-shadow:4px 4px 0 var(--orange-dark);
+    transition:transform .12s, box-shadow .12s;
   }
-  .btn-primary:hover{ box-shadow: 0 0 0 3px rgba(70,217,201,0.18); background:#57e3d3; }
-  .btn-outline{
-    background: transparent;
-    border:1px solid var(--line);
-    color: var(--text);
+  .btn-primary:hover{ transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--orange-dark); }
+  .btn-primary:active{ transform:translate(0,0); box-shadow:2px 2px 0 var(--orange-dark); }
+  .btn-ghost{
+    background:transparent; color:var(--paper); border:1px solid var(--blue-line);
+    padding:14px 26px; border-radius:8px; font-size:16px; cursor:pointer; font-family:'Space Grotesk';
   }
-  .btn-outline:hover{ border-color: var(--signal-dim); background: rgba(70,217,201,0.06); }
-  .btn-danger{
-    background: transparent;
-    border:1px solid rgba(255,93,93,0.4);
-    color: var(--live);
-  }
-  .btn-danger:hover{ background: rgba(255,93,93,0.1); border-color: var(--live); }
-  input:focus{ outline:none; }
-  .code-input{
-    background: #0a0c0f;
-    border:1px solid var(--line);
-  }
-  .code-input:focus{ border-color: var(--signal-dim); box-shadow: 0 0 0 3px rgba(70,217,201,0.12); }
+  .btn-ghost:hover{ border-color:var(--paper); }
 
-  @keyframes pulse-dot{
-    0%,100%{ opacity:1; transform:scale(1); }
-    50%{ opacity:.45; transform:scale(0.85); }
+  .corner-tag{
+    position:absolute; top:100px; right:24px; width:150px;
+    border:1px dashed rgba(234,240,255,0.3); border-radius:8px; padding:12px;
+    font-family:'JetBrains Mono'; font-size:11px; color:rgba(234,240,255,0.55);
+    display:none;
   }
-  .pulse{ animation: pulse-dot 1.6s ease-in-out infinite; }
+  @media(min-width:900px){ .corner-tag{ display:block; } }
 
-  @keyframes sweep{
-    0%{ transform: translateX(-100%); }
-    100%{ transform: translateX(100%); }
+  /* SECTION LABEL */
+  .section{ padding:88px 0; border-top:1px solid var(--blue-line); }
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:44px; }
+  .section-head h2{ font-size:clamp(28px,4vw,40px); }
+  .section-num{ font-family:'JetBrains Mono'; color:rgba(234,240,255,0.4); font-size:14px; }
+
+  /* FEATURES */
+  .feat-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--card-line); border:1px solid var(--card-line); border-radius:var(--radius); overflow:hidden; }
+  @media(max-width:760px){ .feat-grid{ grid-template-columns:1fr; } }
+  .feat{ background:var(--card); padding:32px 26px; }
+  .feat-icon{ width:38px; height:38px; border-radius:8px; background:rgba(139,92,246,0.15); display:flex; align-items:center; justify-content:center; color:var(--orange); font-size:18px; margin-bottom:18px; }
+  .feat h3{ font-size:19px; margin-bottom:8px; }
+  .feat p{ font-size:14.5px; color:rgba(234,240,255,0.65); margin:0; }
+
+  /* PRICING - blueprint spec sheets */
+  .domain-toggle{
+    display:flex; align-items:center; gap:12px; background:var(--card);
+    border:1px solid var(--card-line); border-radius:10px; padding:14px 18px;
+    margin-bottom:36px; max-width:520px;
   }
-  .sweep::after{
-    content:"";
-    position:absolute; inset:0;
-    background: linear-gradient(90deg, transparent, rgba(70,217,201,0.12), transparent);
-    animation: sweep 2.2s linear infinite;
+  .switch{ position:relative; width:42px; height:24px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{ position:absolute; inset:0; background:rgba(234,240,255,0.2); border-radius:24px; cursor:pointer; transition:.2s; }
+  .slider::before{ content:""; position:absolute; width:18px; height:18px; left:3px; top:3px; background:var(--paper); border-radius:50%; transition:.2s; }
+  input:checked + .slider{ background:var(--orange); }
+  input:checked + .slider::before{ transform:translateX(18px); }
+  .domain-toggle .label{ font-size:14.5px; }
+  .domain-toggle .label b{ color:var(--yellow); }
+  .domain-toggle small{ display:block; color:rgba(234,240,255,0.55); font-size:12.5px; margin-top:2px; }
+
+  .price-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+  @media(max-width:900px){ .price-grid{ grid-template-columns:1fr; } }
+  .price-card{
+    position:relative;
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:var(--radius);
+    padding:30px 26px 26px;
   }
-
-  video{ background:#000; }
-  .video-frame{
-    border:1px solid var(--line);
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 20px 60px -20px rgba(0,0,0,0.7);
+  .price-card.featured{ border-color:var(--orange); }
+  .price-card .badge{
+    position:absolute; top:-12px; left:26px; background:var(--orange); color:var(--blue);
+    font-size:11px; font-weight:700; padding:4px 10px; border-radius:5px; letter-spacing:0.04em;
+    font-family:'JetBrains Mono';
   }
-
-  .fade-in{ animation: fadeIn .35s ease both; }
-  @keyframes fadeIn{ from{opacity:0; transform: translateY(6px);} to{opacity:1; transform:translateY(0);} }
-
-  ::selection{ background: rgba(70,217,201,0.3); }
-
-  @media (prefers-reduced-motion: reduce){
-    .pulse, .sweep::after{ animation: none !important; }
+  .spec-id{ font-family:'JetBrains Mono'; font-size:12px; color:rgba(234,240,255,0.4); margin-bottom:14px; }
+  .price-card h3{ font-size:22px; margin-bottom:6px; }
+  .price-card .desc{ font-size:13.5px; color:rgba(234,240,255,0.6); margin-bottom:22px; min-height:36px; }
+  .price-amt{ display:flex; align-items:baseline; gap:6px; margin-bottom:4px; }
+  .price-amt .num{ font-family:'Archivo Black'; font-size:38px; }
+  .price-amt .cycle{ font-size:13px; color:rgba(234,240,255,0.55); }
+  .price-addon-note{ font-size:12px; color:var(--yellow); font-family:'JetBrains Mono'; min-height:16px; margin-bottom:18px; }
+  .price-card ul{ list-style:none; padding:0; margin:0 0 26px; font-size:14px; }
+  .price-card li{ display:flex; gap:8px; padding:7px 0; border-top:1px dashed var(--card-line); color:rgba(234,240,255,0.8); }
+  .price-card li:first-child{ border-top:none; }
+  .price-card li::before{ content:"✓"; color:var(--mint); font-weight:700; }
+  .price-btn{
+    width:100%; padding:12px; border-radius:8px; border:1px solid var(--blue-line);
+    background:transparent; color:var(--paper); font-family:'Space Grotesk'; font-size:14.5px;
+    font-weight:600; cursor:pointer; transition:.15s;
   }
+  .price-card.featured .price-btn{ background:var(--orange); color:var(--blue); border:none; }
+  .price-btn:hover{ border-color:var(--paper); }
+  .price-card.featured .price-btn:hover{ background:var(--orange-dark); }
+  .price-email-btn{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    width:100%; padding:11px; margin-top:10px; border-radius:8px;
+    border:1px dashed var(--card-line); background:transparent; color:var(--yellow);
+    font-family:'Space Grotesk'; font-size:13.5px; font-weight:600;
+    cursor:pointer; transition:.15s;
+  }
+  .price-email-btn:hover{ border-color:var(--yellow); background:rgba(66,232,224,0.08); }
+  .price-email-btn:disabled{ opacity:0.6; cursor:default; }
+
+  /* IDEA BOX */
+  .idea-wrap{
+    background:var(--card); border:1px solid var(--card-line); border-radius:14px;
+    padding:44px; position:relative; overflow:hidden;
+  }
+  .idea-wrap::before{
+    content:""; position:absolute; inset:0;
+    background-image: linear-gradient(var(--card-line) 1px, transparent 1px), linear-gradient(90deg, var(--card-line) 1px, transparent 1px);
+    background-size:24px 24px; opacity:0.4; pointer-events:none;
+  }
+  .idea-inner{ position:relative; z-index:1; max-width:640px; }
+  .idea-wrap h2{ font-size:clamp(26px,4vw,34px); margin-bottom:10px; }
+  .idea-wrap > .idea-inner > p{ color:rgba(234,240,255,0.65); font-size:15px; margin-bottom:28px; }
+  label.field-label{ display:block; font-family:'JetBrains Mono'; font-size:12px; color:rgba(234,240,255,0.55); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em; }
+  .field{ margin-bottom:20px; }
+  input[type=text], input[type=email], textarea{
+    width:100%; background:rgba(234,240,255,0.06); border:1px solid var(--card-line);
+    border-radius:8px; padding:13px 14px; color:var(--paper); font-family:'Space Grotesk';
+    font-size:15px; resize:vertical;
+  }
+  input[type=text]:focus, input[type=email]:focus, textarea:focus{
+    outline:none; border-color:var(--orange);
+  }
+  textarea{ min-height:120px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:600px){ .field-row{ grid-template-columns:1fr; } }
+  .submit-row{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:6px; }
+  #formStatus{ font-family:'JetBrains Mono'; font-size:13px; color:rgba(234,240,255,0.6); }
+  #formStatus.ok{ color:var(--mint); }
+  #formStatus.err{ color:var(--orange); }
+
+  footer{ border-top:1px solid var(--blue-line); padding:36px 0; }
+  footer .wrap{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:13px; color:rgba(234,240,255,0.5); }
 </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
 
-<!-- Top bar -->
-<header class="w-full border-b border-[var(--line)]">
-  <div class="max-w-5xl mx-auto px-5 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-2.5">
-      <div class="w-2.5 h-2.5 rounded-full bg-[var(--signal)]"></div>
-      <span class="mono text-sm tracking-[0.2em] text-[var(--muted)] uppercase">Wavecast</span>
-    </div>
-    <div id="connIndicator" class="hidden items-center gap-2 mono text-xs text-[var(--muted)]">
-      <span id="connDot" class="w-2 h-2 rounded-full bg-[var(--muted)]"></span>
-      <span id="connLabel">idle</span>
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="brand-mark">YF</span>YMGENV Forge</div>
+  </div>
+</nav>
+
+<header class="hero grid-bg">
+  <div class="wrap">
+    <h1>Websites <span class="hl">forged</span>, not templated.</h1>
+    <p>We design and build sites for small businesses and side projects — fast, a little weird, and actually fun to click around in.</p>
+    <div class="hero-ctas">
+      <button class="btn-primary" onclick="document.getElementById('idea').scrollIntoView()">Pitch us your idea</button>
     </div>
   </div>
 </header>
 
-<main class="flex-1 flex items-start sm:items-center justify-center px-4 py-8 sm:py-10">
+<section class="section" id="work">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>What you get</h2>
+      <span class="section-num mono">01 / building blocks</span>
+    </div>
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="feat-icon">✎</div>
+        <h3>A design with a point of view</h3>
+        <p>No stock templates. Every site gets its own layout, type, and color choices, built for what you actually do.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">⚡</div>
+        <h3>Live in days</h3>
+        <p>Most sites ship in under two weeks. You'll see drafts early — no six-month agency black hole.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">◆</div>
+        <h3>Details that move</h3>
+        <p>Small interactions and micro-animations that make a page feel alive instead of static and forgettable.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <!-- ============ LOBBY SCREEN ============ -->
-  <section id="lobbyScreen" class="w-full max-w-md fade-in">
-    <div class="mb-8 text-center">
-      <p class="mono text-[11px] tracking-[0.3em] text-[var(--signal)] uppercase mb-3">Peer to Peer · Live</p>
-      <h1 class="text-3xl sm:text-4xl font-extrabold leading-tight">Tune in to a room.</h1>
-      <p class="text-[var(--muted)] mt-2 text-sm">Enter a channel code to broadcast or watch a live camera feed.</p>
+<section class="section" id="pricing">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Pricing</h2>
+      <span class="section-num mono">02 / pick a build</span>
     </div>
 
-    <div class="card rounded-2xl p-6 sm:p-7 relative overflow-hidden">
-      <div class="scanlines absolute inset-0 rounded-2xl"></div>
-      <div class="relative">
-        <label class="mono text-[11px] tracking-[0.2em] text-[var(--muted)] uppercase block mb-2">Channel Code</label>
-        <input id="roomCodeInput" type="text" maxlength="12" autocomplete="off" spellcheck="false"
-          placeholder="E.G. FOX-2214"
-          class="code-input w-full rounded-xl px-4 py-3.5 text-xl mono tracking-[0.15em] uppercase text-center dial-digit rounded-xl transition"
-        >
-        <p id="lobbyError" class="hidden text-[var(--live)] text-xs mt-2 mono"></p>
+    <div class="domain-toggle">
+      <label class="switch">
+        <input type="checkbox" id="domainToggle" onchange="updatePrices()">
+        <span class="slider"></span>
+      </label>
+      <div class="label">
+        Add a custom domain <b>+$150/yr</b>
+        <small>We'll register and connect yourname.com instead of the free ymgenv.github.io domain.</small>
+      </div>
+    </div>
 
-        <div class="grid grid-cols-2 gap-3 mt-5">
-          <button id="joinSenderBtn" class="btn btn-primary rounded-xl py-3.5 font-semibold text-sm">
-            Join as Sender
-          </button>
-          <button id="joinViewerBtn" class="btn btn-outline rounded-xl py-3.5 font-semibold text-sm">
-            Join as Viewer
-          </button>
-        </div>
+    <div class="price-grid">
+      <div class="price-card" data-base="490">
+        <div class="spec-id">SPEC 01 · STARTER</div>
+        <h3>One-pager</h3>
+        <div class="desc">A single sharp landing page. Good for launches and small services.</div>
+        <div class="price-amt"><span class="num">$<span class="amount">490</span></span><span class="cycle">one-time</span></div>
+        <div class="price-addon-note"></div>
+        <ul>
+          <li>1 custom-designed page</li>
+          <li>Mobile responsive</li>
+          <li>Free ymgenv.github.io domain</li>
+          <li>2 rounds of revisions</li>
+        </ul>
+        <button class="price-btn" onclick="pickPlan('One-pager')">Choose one-pager</button>
+        <button type="button" class="price-email-btn" onclick="emailAboutPlan('One-pager', this)">
+          <span aria-hidden="true">✉</span> Email about this plan
+        </button>
+      </div>
 
-        <div class="flex items-center gap-3 mt-6 pt-5 border-t border-[var(--line)]">
-          <div class="flex-1">
-            <p class="text-xs text-[var(--muted)] leading-relaxed">
-              <span class="text-[var(--signal)]">Sender</span> shares camera + mic.
-              <span class="text-[var(--signal)]">Viewer</span> only watches — no camera access requested.
-            </p>
+      <div class="price-card featured" data-base="1450">
+        <div class="badge">Most booked</div>
+        <div class="spec-id">SPEC 02 · GROWTH</div>
+        <h3>Full site</h3>
+        <div class="desc">Up to 6 pages, built for a real small business that wants to look the part.</div>
+        <div class="price-amt"><span class="num">$<span class="amount">1,450</span></span><span class="cycle">one-time</span></div>
+        <div class="price-addon-note"></div>
+        <ul>
+          <li>Up to 6 pages</li>
+          <li>Contact + booking form</li>
+          <li>Basic SEO setup</li>
+          <li>4 rounds of revisions</li>
+          <li>30 days of support after launch</li>
+        </ul>
+        <button class="price-btn" onclick="pickPlan('Full site')">Choose full site</button>
+        <button type="button" class="price-email-btn" onclick="emailAboutPlan('Full site', this)">
+          <span aria-hidden="true">✉</span> Email about this plan
+        </button>
+      </div>
+
+      <div class="price-card" data-base="3200">
+        <div class="spec-id">CUSTOM</div>
+        <h3>Full build</h3>
+        <div class="desc">Bigger sites, stores, or anything with custom features and moving parts.</div>
+        <div class="price-amt"><span class="num">$<span class="amount">3,200</span></span><span class="cycle">starting at</span></div>
+        <div class="price-addon-note"></div>
+        <ul>
+          <li>Unlimited pages</li>
+          <li>Store or booking system</li>
+          <li>Custom interactions</li>
+          <li>90 days of support after launch</li>
+        </ul>
+        <button class="price-btn" onclick="pickPlan('Custom build')">Choose custom build</button>
+        <button type="button" class="price-email-btn" onclick="emailAboutPlan('Custom build', this)">
+          <span aria-hidden="true">✉</span> Email about this plan
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="idea">
+  <div class="wrap">
+    <div class="idea-wrap">
+      <div class="idea-inner">
+        <h2>Tell us what you're building</h2>
+        <p>Drop your idea below — even if it's messy. We'll reply with next steps and a rough quote.</p>
+
+        <form id="ideaForm">
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="name">Your name</label>
+              <input type="text" id="name" name="name" placeholder="Jordan Lee" required>
+            </div>
+            <div class="field">
+              <label class="field-label" for="email">Email</label>
+              <input type="email" id="email" name="email" placeholder="jordan@email.com" required>
+            </div>
           </div>
-        </div>
+          <div class="field">
+            <label class="field-label" for="plan">Interested in</label>
+            <input type="text" id="plan" name="plan" placeholder="One-pager, Full site, Custom build...">
+          </div>
+          <div class="field">
+            <label class="field-label" for="idea">Your idea</label>
+            <textarea id="idea" name="idea" placeholder="What's the business or project? What should the site do?" required></textarea>
+          </div>
+          <div class="submit-row">
+            <button type="submit" class="btn-primary" id="submitBtn">Send it over</button>
+            <span id="formStatus"></span>
+          </div>
+        </form>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ============ SENDER SCREEN ============ -->
-  <section id="senderScreen" class="w-full max-w-3xl hidden fade-in">
-    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-      <div>
-        <p class="mono text-[11px] tracking-[0.3em] text-[var(--signal)] uppercase mb-1">On Air · Sender</p>
-        <h2 class="text-xl sm:text-2xl font-bold mono dial-digit">
-          CH <span id="senderRoomLabel">----</span>
-        </h2>
-      </div>
-      <div class="flex items-center gap-2 mono text-xs px-3 py-2 rounded-lg border border-[var(--line)]">
-        <span id="senderStatusDot" class="w-2 h-2 rounded-full bg-[var(--amber)] pulse"></span>
-        <span id="senderStatusLabel" class="text-[var(--muted)]">waiting for viewer…</span>
-      </div>
-    </div>
-
-    <div class="video-frame rounded-2xl overflow-hidden relative aspect-video">
-      <video id="localVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
-      <div class="absolute top-3 left-3 flex items-center gap-1.5 bg-black/50 backdrop-blur px-2.5 py-1 rounded-md mono text-[11px] tracking-widest">
-        <span class="w-1.5 h-1.5 rounded-full bg-[var(--live)] pulse"></span> LIVE PREVIEW
-      </div>
-    </div>
-
-    <p id="senderError" class="hidden text-[var(--live)] text-sm mt-4 mono"></p>
-
-    <div class="flex justify-center gap-3 mt-6 flex-wrap">
-      <button id="muteSenderBtn" class="btn btn-outline rounded-xl px-6 py-3 font-semibold text-sm flex items-center gap-2">
-        <span id="muteSenderIcon">🎙️</span> <span id="muteSenderLabel">Mute Mic</span>
-      </button>
-      <button id="flipCameraBtn" class="btn btn-outline rounded-xl px-6 py-3 font-semibold text-sm flex items-center gap-2">
-        <span>🔄</span> <span>Flip Camera</span>
-      </button>
-      <button id="stopSenderBtn" class="btn btn-danger rounded-xl px-6 py-3 font-semibold text-sm">
-        Stop Streaming
-      </button>
-    </div>
-  </section>
-
-  <!-- ============ VIEWER SCREEN ============ -->
-  <section id="viewerScreen" class="w-full max-w-3xl hidden fade-in">
-    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-      <div>
-        <p class="mono text-[11px] tracking-[0.3em] text-[var(--signal)] uppercase mb-1">Watching · Viewer</p>
-        <h2 class="text-xl sm:text-2xl font-bold mono dial-digit">
-          CH <span id="viewerRoomLabel">----</span>
-        </h2>
-      </div>
-      <div class="flex items-center gap-2 mono text-xs px-3 py-2 rounded-lg border border-[var(--line)]">
-        <span id="viewerStatusDot" class="w-2 h-2 rounded-full bg-[var(--amber)] pulse"></span>
-        <span id="viewerStatusLabel" class="text-[var(--muted)]">connecting…</span>
-      </div>
-    </div>
-
-    <div class="video-frame rounded-2xl overflow-hidden relative aspect-video flex items-center justify-center">
-      <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
-      <div id="viewerWaiting" class="absolute inset-0 flex flex-col items-center justify-center gap-4 sweep">
-        <div class="w-14 h-14 rounded-full border-2 border-[var(--signal-dim)] border-t-[var(--signal)] animate-spin"></div>
-        <p class="mono text-sm text-[var(--muted)] text-center px-6">
-          Waiting for sender to join room <span id="viewerWaitCode" class="text-[var(--signal)]">----</span>…
-        </p>
-      </div>
-    </div>
-
-    <p id="viewerError" class="hidden text-[var(--live)] text-sm mt-4 mono"></p>
-
-    <div class="flex justify-center gap-3 mt-6">
-      <button id="muteViewerBtn" class="btn btn-outline rounded-xl px-6 py-3 font-semibold text-sm flex items-center gap-2">
-        <span id="muteViewerIcon">🔊</span> <span id="muteViewerLabel">Mute</span>
-      </button>
-      <button id="disconnectViewerBtn" class="btn btn-danger rounded-xl px-6 py-3 font-semibold text-sm">
-        Disconnect
-      </button>
-    </div>
-  </section>
-
-</main>
-
-<footer class="w-full py-5 text-center">
-  <p class="mono text-[10px] tracking-[0.2em] text-[var(--muted)] uppercase">Signal carried over WebRTC · Routed via Supabase Realtime</p>
+<footer>
+  <div class="wrap">
+    <span>© 2026 YMGENV Forge</span>
+    <span>hello@ymgenvforge.site</span>
+  </div>
 </footer>
 
 <script>
-(function(){
-  "use strict";
+  // ---- Pricing ----
+  const DOMAIN_ADDON = 150;
 
-  // ---------- Supabase setup ----------
-  const SUPABASE_URL = "https://qymmzjoudifiaoayiymz.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_jk33xLKr-D_zLcnlaY8Ukw_tuJ6HsHU";
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  const ICE_SERVERS = {
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" }
-    ]
-  };
-
-  // ---------- Socket.io realtime server ----------
-  const SOCKET_SERVER_URL = "https://ar-2sus.onrender.com";
-  let socket = null;
-
-  function connectSocket(roomCode, deviceType){
-    if(socket){
-      try{ socket.disconnect(); }catch(e){}
-    }
-
-    socket = io(SOCKET_SERVER_URL, {
-      transports: ['websocket', 'polling']
+  function updatePrices(){
+    const addDomain = document.getElementById('domainToggle').checked;
+    document.querySelectorAll('.price-card').forEach(card => {
+      const base = parseInt(card.dataset.base, 10);
+      const amountEl = card.querySelector('.amount');
+      const noteEl = card.querySelector('.price-addon-note');
+      const total = addDomain ? base + DOMAIN_ADDON : base;
+      amountEl.textContent = total.toLocaleString();
+      noteEl.textContent = addDomain ? `includes custom domain (+$${DOMAIN_ADDON}/yr)` : '';
     });
-
-    socket.on('connect', () => {
-      console.log('[socket] connected:', socket.id);
-      socket.emit('join-room', { roomCode, deviceType });
-    });
-
-    socket.on('disconnect', (reason) => {
-      console.log('[socket] disconnected:', reason);
-    });
-
-    socket.on('connect_error', (err) => {
-      console.error('[socket] connection error:', err.message || err);
-    });
-
-    // Incoming data relayed from the other device(s) in the room
-    socket.on('receive-payload', (data) => {
-      handleIncomingPayload(data);
-    });
-
-    // Room membership / status changes (e.g. peer joined/left)
-    socket.on('room-updated', (data) => {
-      handleRoomUpdate(data);
-    });
-
-    return socket;
   }
 
-  function disconnectSocket(){
-    if(socket){
-      try{ socket.disconnect(); }catch(e){}
-      socket = null;
+  function pickPlan(planName){
+    document.getElementById('plan').value = planName;
+    document.getElementById('idea').scrollIntoView({behavior:'smooth'});
+    document.getElementById('idea').focus({preventScroll:true});
+  }
+
+  // ---- Per-plan email buttons ----
+  async function emailAboutPlan(planName, btn){
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    try {
+      const res = await fetch("https://formsubmit.co/ajax/yogitmeenawat2@gmail.com", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          _subject: `${planName} plan — when can we start?`,
+          plan: planName,
+          message: `I'd like to get started with the ${planName} plan. When can we begin?`,
+          sentAt: new Date().toISOString()
+        })
+      });
+      if (!res.ok) throw new Error('Server responded with ' + res.status);
+      btn.textContent = 'Sent — check your inbox';
+    } catch (err) {
+      btn.textContent = "Couldn't send, try again";
+      console.error(err);
+    } finally {
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }, 3000);
     }
   }
 
-  // Send real-time data to the rest of the room
-  function sendPayload(data){
-    if(!socket || !socket.connected){
-      console.warn('[socket] cannot send payload — not connected');
-      return;
-    }
-    socket.emit('send-payload', {
-      roomCode: state.roomCode,
-      ...data
-    });
-  }
+  // ---- Form submission ----
+  // Sends straight to your inbox via FormSubmit (no backend needed).
+  // IMPORTANT: the first submission triggers a one-time confirmation email
+  // to yogitmeenawat2@gmail.com — click "Activate form" in it once, after
+  // that every future submission arrives normally.
+  //
+  // Once your own Render server is ready, swap this back to it, e.g.
+  // "https://ymgenvforge-api.onrender.com/api/ideas"
+  const SERVER_URL = "https://formsubmit.co/ajax/yogitmeenawat2@gmail.com";
 
-  // Hook: called whenever data arrives from another device in the room.
-  // Wire this up to whatever live UI elements need to stay in sync.
-  function handleIncomingPayload(data){
-    console.log('[socket] receive-payload:', data);
-  }
+  const form = document.getElementById('ideaForm');
+  const statusEl = document.getElementById('formStatus');
+  const submitBtn = document.getElementById('submitBtn');
 
-  // Hook: called whenever the server reports a change in room state
-  // (e.g. sender/viewer connected or disconnected). Wire this up to
-  // your connection indicators / status labels as needed.
-  function handleRoomUpdate(data){
-    console.log('[socket] room-updated:', data);
-  }
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusEl.className = '';
+    statusEl.textContent = '';
 
-  // ---------- DOM ----------
-  const el = (id) => document.getElementById(id);
-
-  const lobbyScreen = el("lobbyScreen");
-  const senderScreen = el("senderScreen");
-  const viewerScreen = el("viewerScreen");
-
-  const roomCodeInput = el("roomCodeInput");
-  const lobbyError = el("lobbyError");
-  const joinSenderBtn = el("joinSenderBtn");
-  const joinViewerBtn = el("joinViewerBtn");
-
-  const localVideo = el("localVideo");
-  const senderRoomLabel = el("senderRoomLabel");
-  const senderStatusDot = el("senderStatusDot");
-  const senderStatusLabel = el("senderStatusLabel");
-  const senderError = el("senderError");
-  const stopSenderBtn = el("stopSenderBtn");
-  const muteSenderBtn = el("muteSenderBtn");
-  const muteSenderIcon = el("muteSenderIcon");
-  const muteSenderLabel = el("muteSenderLabel");
-  const flipCameraBtn = el("flipCameraBtn");
-
-  const remoteVideo = el("remoteVideo");
-  const viewerRoomLabel = el("viewerRoomLabel");
-  const viewerWaitCode = el("viewerWaitCode");
-  const viewerWaiting = el("viewerWaiting");
-  const viewerStatusDot = el("viewerStatusDot");
-  const viewerStatusLabel = el("viewerStatusLabel");
-  const viewerError = el("viewerError");
-  const disconnectViewerBtn = el("disconnectViewerBtn");
-  const muteViewerBtn = el("muteViewerBtn");
-  const muteViewerIcon = el("muteViewerIcon");
-  const muteViewerLabel = el("muteViewerLabel");
-
-  const connIndicator = el("connIndicator");
-  const connDot = el("connDot");
-  const connLabel = el("connLabel");
-
-  // ---------- State ----------
-  let state = {
-    role: null,        // 'sender' | 'viewer'
-    roomCode: null,
-    clientId: null,
-    channel: null,
-    pc: null,
-    localStream: null,
-    remoteHasJoinedPresence: false,
-    pendingIceQueue: [],
-    remoteDescSet: false,
-    peerPresent: false,
-    facingMode: 'user',
-    isFlippingCamera: false,
-  };
-
-  function genClientId(){
-    return 'c-' + Math.random().toString(36).slice(2, 10);
-  }
-
-  function showScreen(name){
-    lobbyScreen.classList.add('hidden');
-    senderScreen.classList.add('hidden');
-    viewerScreen.classList.add('hidden');
-    connIndicator.classList.remove('flex');
-    connIndicator.classList.add('hidden');
-    if(name === 'lobby') lobbyScreen.classList.remove('hidden');
-    if(name === 'sender'){ senderScreen.classList.remove('hidden'); connIndicator.classList.remove('hidden'); connIndicator.classList.add('flex'); }
-    if(name === 'viewer'){ viewerScreen.classList.remove('hidden'); connIndicator.classList.remove('hidden'); connIndicator.classList.add('flex'); }
-  }
-
-  function setTopConn(status){
-    // status: idle | connecting | connected | error
-    const map = {
-      idle: ['bg-[var(--muted)]', 'idle'],
-      connecting: ['bg-[var(--amber)] pulse', 'connecting'],
-      connected: ['bg-[var(--signal)]', 'connected'],
-      error: ['bg-[var(--live)]', 'error'],
+    const domainToggle = document.getElementById('domainToggle').checked;
+    const payload = {
+      name: document.getElementById('name').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      plan: document.getElementById('plan').value.trim(),
+      idea: document.getElementById('idea').value.trim(),
+      wantsCustomDomain: domainToggle,
+      submittedAt: new Date().toISOString()
     };
-    const [cls, label] = map[status] || map.idle;
-    connDot.className = 'w-2 h-2 rounded-full ' + cls;
-    connLabel.textContent = label;
-  }
 
-  function showLobbyError(msg){
-    lobbyError.textContent = msg;
-    lobbyError.classList.remove('hidden');
-  }
-  function clearLobbyError(){
-    lobbyError.classList.add('hidden');
-  }
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
 
-  function normalizeRoomCode(raw){
-    return raw.trim().toUpperCase().replace(/[^A-Z0-9\-]/g, '');
-  }
-
-  // ---------- Cleanup ----------
-  function cleanup(){
-    disconnectSocket();
-    try{
-      if(state.pc){
-        state.pc.ontrack = null;
-        state.pc.onicecandidate = null;
-        state.pc.oniceconnectionstatechange = null;
-        state.pc.close();
-      }
-    }catch(e){}
-    try{
-      if(state.localStream){
-        state.localStream.getTracks().forEach(t => t.stop());
-      }
-    }catch(e){}
-    try{
-      if(state.channel){
-        state.channel.untrack().catch(()=>{});
-        supabase.removeChannel(state.channel);
-      }
-    }catch(e){}
-
-    localVideo.srcObject = null;
-    remoteVideo.srcObject = null;
-
-    state = {
-      role: null,
-      roomCode: null,
-      clientId: null,
-      channel: null,
-      pc: null,
-      localStream: null,
-      remoteHasJoinedPresence: false,
-      pendingIceQueue: [],
-      remoteDescSet: false,
-      peerPresent: false,
-    };
-  }
-
-  function backToLobby(){
-    cleanup();
-    roomCodeInput.value = '';
-    clearLobbyError();
-    senderError.classList.add('hidden');
-    viewerError.classList.add('hidden');
-    showScreen('lobby');
-  }
-
-  window.addEventListener('beforeunload', cleanup);
-  document.addEventListener('visibilitychange', () => {
-    if(document.visibilityState === 'hidden' && state.role){
-      // best-effort presence flush; do not fully cleanup so brief tab switches don't kill stream
-    }
-  });
-
-  // ---------- Peer connection factory ----------
-  function createPeerConnection(onIceCandidate){
-    const pc = new RTCPeerConnection(ICE_SERVERS);
-    pc.onicecandidate = (event) => {
-      if(event.candidate){
-        onIceCandidate(event.candidate);
-      }
-    };
-    pc.oniceconnectionstatechange = () => {
-      const st = pc.iceConnectionState;
-      if(st === 'connected' || st === 'completed'){
-        setTopConn('connected');
-        if(state.role === 'sender'){
-          senderStatusDot.className = 'w-2 h-2 rounded-full bg-[var(--signal)]';
-          senderStatusLabel.textContent = 'streaming to viewer';
-          senderStatusLabel.classList.remove('text-[var(--muted)]');
-        }
-        if(state.role === 'viewer'){
-          viewerStatusDot.className = 'w-2 h-2 rounded-full bg-[var(--signal)]';
-          viewerStatusLabel.textContent = 'connected';
-        }
-      } else if(st === 'disconnected'){
-        setTopConn('connecting');
-      } else if(st === 'failed'){
-        setTopConn('error');
-        const msg = 'Connection failed. The peer may have left, or a network/firewall issue is blocking the stream.';
-        if(state.role === 'sender') showSenderError(msg);
-        if(state.role === 'viewer') showViewerError(msg);
-      }
-    };
-    return pc;
-  }
-
-  function showSenderError(msg){
-    senderError.textContent = msg;
-    senderError.classList.remove('hidden');
-  }
-  function showViewerError(msg){
-    viewerError.textContent = msg;
-    viewerError.classList.remove('hidden');
-  }
-
-  async function flushIceQueue(pc){
-    while(state.pendingIceQueue.length){
-      const cand = state.pendingIceQueue.shift();
-      try{ await pc.addIceCandidate(new RTCIceCandidate(cand)); }
-      catch(e){ console.warn('addIceCandidate failed', e); }
-    }
-  }
-
-  // ================= SENDER FLOW =================
-  async function startSender(roomCode){
-    state.role = 'sender';
-    state.roomCode = roomCode;
-    state.clientId = genClientId();
-
-    senderRoomLabel.textContent = roomCode;
-    showScreen('sender');
-    setTopConn('connecting');
-    senderStatusDot.className = 'w-2 h-2 rounded-full bg-[var(--amber)] pulse';
-    senderStatusLabel.textContent = 'waiting for viewer…';
-    senderStatusLabel.classList.add('text-[var(--muted)]');
-    senderError.classList.add('hidden');
-    muteSenderIcon.textContent = '🎙️';
-    muteSenderLabel.textContent = 'Mute Mic';
-    muteSenderBtn.classList.remove('btn-danger');
-    muteSenderBtn.classList.add('btn-outline');
-    state.facingMode = 'user';
-
-    // Connect to the realtime Socket.io server for this room
-    connectSocket(roomCode, 'sender');
-
-    // 1. Get camera/mic
-    let stream;
-    try{
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: state.facingMode },
-        audio: true
+    try {
+      const res = await fetch(SERVER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
-    }catch(err){
-      showSenderError('Camera/microphone access was denied or unavailable. Please allow permissions and try again.');
-      setTopConn('error');
-      return;
-    }
-    state.localStream = stream;
-    localVideo.srcObject = stream;
 
-    // 2. Peer connection
-    const pc = createPeerConnection((candidate) => {
-      state.channel.send({
-        type: 'broadcast',
-        event: 'signal',
-        payload: { kind: 'ice-candidate-sender', candidate, from: state.clientId }
-      });
-    });
-    stream.getTracks().forEach(track => pc.addTrack(track, stream));
-    state.pc = pc;
+      if (!res.ok) throw new Error('Server responded with ' + res.status);
 
-    // 3. Signaling channel
-    const channel = supabase.channel('room-' + roomCode, {
-      config: { presence: { key: state.clientId }, broadcast: { self: false } }
-    });
-    state.channel = channel;
-
-    channel.on('broadcast', { event: 'signal' }, async ({ payload }) => {
-      if(!payload) return;
-      try{
-        if(payload.kind === 'answer'){
-          await pc.setRemoteDescription(new RTCSessionDescription(payload.answer));
-          state.remoteDescSet = true;
-          await flushIceQueue(pc);
-        } else if(payload.kind === 'ice-candidate-viewer'){
-          if(state.remoteDescSet){
-            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
-          } else {
-            state.pendingIceQueue.push(payload.candidate);
-          }
-        }
-      }catch(e){
-        console.error('Sender signal handling error', e);
-      }
-    });
-
-    channel.on('presence', { event: 'sync' }, () => {
-      const presenceState = channel.presenceState();
-      let viewerFound = false;
-      Object.values(presenceState).forEach(entries => {
-        entries.forEach(entry => { if(entry.role === 'viewer') viewerFound = true; });
-      });
-      if(viewerFound && !state.peerPresent){
-        state.peerPresent = true;
-        initiateOfferToViewer(pc, channel);
-      }
-    });
-
-    channel.subscribe(async (status) => {
-      if(status === 'SUBSCRIBED'){
-        await channel.track({ role: 'sender', joinedAt: Date.now() });
-      }
-      if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
-        showSenderError('Lost connection to the signaling server. Please stop and try again.');
-        setTopConn('error');
-      }
-    });
-  }
-
-  async function initiateOfferToViewer(pc, channel){
-    senderStatusLabel.textContent = 'viewer found — connecting…';
-    try{
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      channel.send({
-        type: 'broadcast',
-        event: 'signal',
-        payload: { kind: 'offer', offer, from: state.clientId }
-      });
-    }catch(e){
-      showSenderError('Failed to start the connection with the viewer. Try stopping and starting again.');
-      console.error(e);
-    }
-  }
-
-  stopSenderBtn.addEventListener('click', backToLobby);
-
-  flipCameraBtn.addEventListener('click', async () => {
-    if(!state.localStream || !state.pc || state.isFlippingCamera) return;
-    state.isFlippingCamera = true;
-    flipCameraBtn.disabled = true;
-
-    const newFacingMode = state.facingMode === 'user' ? 'environment' : 'user';
-    let newStream;
-    try{
-      newStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: newFacingMode },
-        audio: false
-      });
-    }catch(err){
-      showSenderError('Could not switch camera. Your device may only have one camera, or access was blocked.');
-      state.isFlippingCamera = false;
-      flipCameraBtn.disabled = false;
-      return;
-    }
-
-    const newVideoTrack = newStream.getVideoTracks()[0];
-    const oldVideoTrack = state.localStream.getVideoTracks()[0];
-
-    try{
-      const sender = state.pc.getSenders().find(s => s.track && s.track.kind === 'video');
-      if(sender){
-        await sender.replaceTrack(newVideoTrack);
-      }
-    }catch(e){
-      console.error('replaceTrack failed', e);
-    }
-
-    // Swap track into the local stream so the preview + future references stay in sync
-    if(oldVideoTrack){
-      state.localStream.removeTrack(oldVideoTrack);
-      oldVideoTrack.stop();
-    }
-    state.localStream.addTrack(newVideoTrack);
-    localVideo.srcObject = state.localStream;
-
-    state.facingMode = newFacingMode;
-    state.isFlippingCamera = false;
-    flipCameraBtn.disabled = false;
-  });
-
-  muteSenderBtn.addEventListener('click', () => {
-    if(!state.localStream) return;
-    const audioTracks = state.localStream.getAudioTracks();
-    if(!audioTracks.length) return;
-    const nowEnabled = !audioTracks[0].enabled;
-    audioTracks.forEach(t => t.enabled = nowEnabled);
-    if(nowEnabled){
-      muteSenderIcon.textContent = '🎙️';
-      muteSenderLabel.textContent = 'Mute Mic';
-      muteSenderBtn.classList.remove('btn-danger');
-      muteSenderBtn.classList.add('btn-outline');
-    } else {
-      muteSenderIcon.textContent = '🔇';
-      muteSenderLabel.textContent = 'Unmute Mic';
-      muteSenderBtn.classList.remove('btn-outline');
-      muteSenderBtn.classList.add('btn-danger');
+      statusEl.textContent = "Sent — we'll be in touch soon.";
+      statusEl.className = 'ok';
+      form.reset();
+    } catch (err) {
+      statusEl.textContent = "Couldn't send that. Check your connection and try again.";
+      statusEl.className = 'err';
+      console.error(err);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send it over';
     }
   });
-
-  // ================= VIEWER FLOW =================
-  async function startViewer(roomCode){
-    state.role = 'viewer';
-    state.roomCode = roomCode;
-    state.clientId = genClientId();
-
-    viewerRoomLabel.textContent = roomCode;
-    viewerWaitCode.textContent = roomCode;
-    showScreen('viewer');
-    setTopConn('connecting');
-    viewerStatusDot.className = 'w-2 h-2 rounded-full bg-[var(--amber)] pulse';
-    viewerStatusLabel.textContent = 'waiting for sender…';
-    viewerWaiting.classList.remove('hidden');
-    viewerError.classList.add('hidden');
-    remoteVideo.muted = false;
-    muteViewerIcon.textContent = '🔊';
-    muteViewerLabel.textContent = 'Mute';
-    muteViewerBtn.classList.remove('btn-danger');
-    muteViewerBtn.classList.add('btn-outline');
-
-    // Connect to the realtime Socket.io server for this room
-    connectSocket(roomCode, 'viewer');
-
-    const pc = createPeerConnection((candidate) => {
-      state.channel.send({
-        type: 'broadcast',
-        event: 'signal',
-        payload: { kind: 'ice-candidate-viewer', candidate, from: state.clientId }
-      });
-    });
-
-    pc.ontrack = (event) => {
-      remoteVideo.srcObject = event.streams[0];
-      viewerWaiting.classList.add('hidden');
-      viewerStatusLabel.textContent = 'receiving stream…';
-    };
-    state.pc = pc;
-
-    const channel = supabase.channel('room-' + roomCode, {
-      config: { presence: { key: state.clientId }, broadcast: { self: false } }
-    });
-    state.channel = channel;
-
-    channel.on('broadcast', { event: 'signal' }, async ({ payload }) => {
-      if(!payload) return;
-      try{
-        if(payload.kind === 'offer'){
-          viewerStatusLabel.textContent = 'sender found — connecting…';
-          await pc.setRemoteDescription(new RTCSessionDescription(payload.offer));
-          state.remoteDescSet = true;
-          await flushIceQueue(pc);
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          channel.send({
-            type: 'broadcast',
-            event: 'signal',
-            payload: { kind: 'answer', answer, from: state.clientId }
-          });
-        } else if(payload.kind === 'ice-candidate-sender'){
-          if(state.remoteDescSet){
-            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
-          } else {
-            state.pendingIceQueue.push(payload.candidate);
-          }
-        }
-      }catch(e){
-        console.error('Viewer signal handling error', e);
-      }
-    });
-
-    channel.subscribe(async (status) => {
-      if(status === 'SUBSCRIBED'){
-        await channel.track({ role: 'viewer', joinedAt: Date.now() });
-      }
-      if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
-        showViewerError('Lost connection to the signaling server. Please disconnect and try again.');
-        setTopConn('error');
-      }
-    });
-
-    // Fallback timeout: if nothing happens for a while, hint at troubleshooting
-    setTimeout(() => {
-      if(state.role === 'viewer' && !remoteVideo.srcObject){
-        viewerStatusLabel.textContent = 'still waiting for sender…';
-      }
-    }, 15000);
-  }
-
-  disconnectViewerBtn.addEventListener('click', backToLobby);
-
-  muteViewerBtn.addEventListener('click', () => {
-    remoteVideo.muted = !remoteVideo.muted;
-    if(remoteVideo.muted){
-      muteViewerIcon.textContent = '🔇';
-      muteViewerLabel.textContent = 'Unmute';
-      muteViewerBtn.classList.remove('btn-outline');
-      muteViewerBtn.classList.add('btn-danger');
-    } else {
-      muteViewerIcon.textContent = '🔊';
-      muteViewerLabel.textContent = 'Mute';
-      muteViewerBtn.classList.remove('btn-danger');
-      muteViewerBtn.classList.add('btn-outline');
-    }
-  });
-
-  // ================= LOBBY WIRING =================
-  function validateAndGetCode(){
-    const raw = roomCodeInput.value;
-    const code = normalizeRoomCode(raw);
-    if(!code || code.length < 3){
-      showLobbyError('Enter a room code (at least 3 characters, letters/numbers).');
-      return null;
-    }
-    clearLobbyError();
-    return code;
-  }
-
-  joinSenderBtn.addEventListener('click', () => {
-    const code = validateAndGetCode();
-    if(!code) return;
-    startSender(code);
-  });
-
-  joinViewerBtn.addEventListener('click', () => {
-    const code = validateAndGetCode();
-    if(!code) return;
-    startViewer(code);
-  });
-
-  roomCodeInput.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter'){
-      const code = validateAndGetCode();
-      if(code) startSender(code);
-    }
-  });
-
-  roomCodeInput.addEventListener('input', clearLobbyError);
-
-  // Initial screen
-  showScreen('lobby');
-})();
 </script>
+
 </body>
 </html>
