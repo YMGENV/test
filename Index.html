@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>fintrack</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { margin: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .animate-spin { animation: spin 1s linear infinite; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ---------------------------------------------------------
+   THEME TOKENS
+--------------------------------------------------------- */
+const T = {
+  bg: "#0B0F0E",
+  surface: "#121815",
+  surface2: "#182019",
+  border: "#233029",
+  borderSoft: "#1B2521",
+  text: "#EAF2EE",
+  textMuted: "#7C8F87",
+  textFaint: "#4E5F58",
+  accent: "#34D399",
+  accentDim: "#1F5F49",
+  danger: "#E8836F",
+  dangerDim: "#5A362E",
+  chip: "#0F1512",
+};
+
+const CURRENCIES = {
+  INR: { symbol: "₹", label: "Indian Rupee" },
+  USD: { symbol: "$", label: "US Dollar" },
+  EUR: { symbol: "€", label: "Euro" },
+  GBP: { symbol: "£", label: "British Pound" },
+  JPY: { symbol: "¥", label: "Japanese Yen" },
+};
+
+const CATEGORIES = ["Food", "Games", "Study", "Shopping", "Travel", "Bills", "Health", "Entertainment", "Other"];
+
+const CATEGORY_KEYWORDS = {
+  Games: ["game", "steam", "xbox", "playstation", "ps5", "nintendo", "valorant", "skin", "console", "epic games"],
+  Food: ["food", "restaurant", "cafe", "coffee", "pizza", "burger", "swiggy", "zomato", "dinner", "lunch", "breakfast", "snack", "grocery", "groceries"],
+  Study: ["book", "course", "tuition", "study", "school", "college", "university", "exam", "udemy", "notebook", "stationery", "fees"],
+  Shopping: ["shopping", "amazon", "flipkart", "clothes", "shoes", "mall", "myntra", "store"],
+  Travel: ["uber", "ola", "taxi", "flight", "train", "bus", "fuel", "petrol", "travel", "trip", "hotel"],
+  Bills: ["bill", "electricity", "water", "rent", "wifi", "internet", "recharge", "subscription", "emi"],
+  Health: ["medicine", "doctor", "hospital", "pharmacy", "gym", "health"],
+  Entertainment: ["movie", "netflix", "spotify", "concert", "cinema", "entertainment"],
+};
+
+function guessCategory(title) {
+  const t = title.toLowerCase();
+  for (const [cat, words] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (words.some((w) => t.includes(w))) return cat;
+  }
+  return "Other";
+}
+
+function fmtMoney(amount, symbol) {
+  const n = Number(amount) || 0;
+  const neg = n < 0;
+  return `${neg ? "-" : ""}${symbol}${Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
+/* ---------------------------------------------------------
+   STORAGE HELPERS
+   Runs on plain localStorage so this works as a static file
+   on GitHub Pages (no Claude artifact backend available there).
+--------------------------------------------------------- */
+let lastStorageError = null;
+const STORAGE_PREFIX = "fintrack:";
+
+async function storeGet(key) {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_PREFIX + key);
+    return raw === null ? null : raw;
+  } catch (err) {
+    lastStorageError = err?.message || String(err);
+    return null;
+  }
+}
+async function storeSet(key, value) {
+  try {
+    window.localStorage.setItem(STORAGE_PREFIX + key, value);
+    return true;
+  } catch (err) {
+    lastStorageError = err?.message || String(err);
+    return false;
+  }
+}
+
+/* ---------------------------------------------------------
+   OPTIONAL AI RECEIPT/CASH READING
+   This calls Anthropic's API directly from the browser, which
+   only works inside a Claude artifact sandbox. On a plain
+   GitHub Pages site this call will fail (no key / CORS) and
+   the UI falls back to manual amount entry automatically.
+--------------------------------------------------------- */
+async function analyzeImage(base64Data, mediaType, promptText) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 500,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: mediaType, data: base64Data } },
+            { type: "text", text: promptText },
+          ],
+        },
+      ],
+    }),
+  });
+  const data = await response.json();
+  const textBlock = (data.content || []).map((b) => b.text || "").join("");
+  const cleaned = textBlock.replace(/```json|```/g, "").trim();
+  return JSON.parse(cleaned);
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      const [meta, data] = result.split(",");
+      const mediaType = meta.match(/data:(.*);base64/)?.[1] || "image/jpeg";
+      resolve({ data, mediaType, dataUrl: result });
+    };
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+const fontDisplay = { fontFamily: "'Space Grotesk', sans-serif" };
+const fontBody = { fontFamily: "'Inter', sans-serif" };
+const fontMono = { fontFamily: "'JetBrains Mono', monospace" };
+
+/* ---------------------------------------------------------
+   ICONS (tiny inline SVGs so the file has zero icon dependency)
+--------------------------------------------------------- */
+function Icon({ path, size = 18, color = "currentColor", className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      {path}
+    </svg>
+  );
+}
+const WalletIcon = (p) => <Icon {...p} path={<><path d="M19 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-3a2 2 0 1 0 0 4h4" /><path d="M17 7V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3" /></>} />;
+const CameraIcon = (p) => <Icon {...p} path={<><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></>} />;
+const PlusIcon = (p) => <Icon {...p} path={<><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>} />;
+const LogOutIcon = (p) => <Icon {...p} path={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>} />;
+const XIcon = (p) => <Icon {...p} path={<><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>} />;
+const CheckIcon = (p) => <Icon {...p} path={<polyline points="20 6 9 17 4 12" />} />;
+const ReceiptIcon = (p) => <Icon {...p} path={<><path d="M4 2h16v20l-3-2-3 2-3-2-3 2-3-2-1 2z" /><line x1="8" y1="7" x2="16" y2="7" /><line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="13" y2="15" /></>} />;
+const BarChartIcon = (p) => <Icon {...p} path={<><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></>} />;
+const HomeIconSvg = (p) => <Icon {...p} path={<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></>} />;
+const LoaderIcon = (p) => <Icon {...p} className={"animate-spin " + (p.className || "")} path={<><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></>} />;
+const AlertIcon = (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>} />;
+const TrendUpIcon = (p) => <Icon {...p} path={<><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></>} />;
+const TrendDownIcon = (p) => <Icon {...p} path={<><polyline points="23 18 13.5 8.5 8.5 13.5 1 6" /><polyline points="17 18 23 18 23 12" /></>} />;
+
+/* ---------------------------------------------------------
+   SMALL UI PRIMITIVES
+--------------------------------------------------------- */
+function Button({ children, onClick, variant = "primary", disabled, className = "", type = "button" }) {
+  const base = "flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition active:scale-[0.98] disabled:opacity-50";
+  const styles = {
+    primary: { backgroundColor: T.accent, color: "#06120D" },
+    secondary: { backgroundColor: T.surface2, color: T.text, border: `1px solid ${T.border}` },
+    danger: { backgroundColor: T.dangerDim, color: T.text },
+    ghost: { backgroundColor: "transparent", color: T.textMuted },
+  };
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${base} ${className}`}
+      style={{ ...fontBody, ...styles[variant] }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <label className="block mb-4">
+      <span className="block text-xs mb-1.5 tracking-wide uppercase" style={{ color: T.textFaint, ...fontBody }}>
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+const inputStyle = {
+  backgroundColor: T.chip,
+  border: `1px solid ${T.border}`,
+  color: T.text,
+  ...fontBody,
+};
+
+function TextInput(props) {
+  return (
+    <input
+      {...props}
+      className="w-full rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2"
+      style={{ ...inputStyle, ...(props.style || {}) }}
+      onFocus={(e) => (e.target.style.boxShadow = `0 0 0 2px ${T.accentDim}`)}
+      onBlur={(e) => (e.target.style.boxShadow = "none")}
+    />
+  );
+}
+
+function Modal({ title, onClose, children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+      <div
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 max-h-[88vh] overflow-y-auto"
+        style={{ backgroundColor: T.surface, border: `1px solid ${T.border}` }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold" style={{ color: T.text, ...fontDisplay }}>{title}</h3>
+          <button onClick={onClose} style={{ color: T.textMuted }}><XIcon size={20} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ErrorNote({ text }) {
+  return (
+    <div className="flex items-start gap-2 rounded-lg px-3 py-2.5 mb-4 text-sm" style={{ backgroundColor: T.dangerDim, color: "#FDEDE8", ...fontBody }}>
+      <AlertIcon size={16} className="mt-0.5 shrink-0" />
+      <span>{text}</span>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
+   AUTH SCREEN
+--------------------------------------------------------- */
+function AuthScreen({ onLoggedIn }) {
+  const [mode, setMode] = useState("signup");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [currency, setCurrency] = useState("INR");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const handleSignUp = async () => {
+    setError("");
+    const cleanEmail = email.trim().toLowerCase();
+    if (!name.trim() || !cleanEmail || !password) {
+      setError("Fill in your name, email, and password.");
+      return;
+    }
+    setBusy(true);
+    const existing = await storeGet(`user:${cleanEmail}`);
+    if (existing) {
+      setBusy(false);
+      setError("An account already exists for that email. Sign in instead.");
+      return;
+    }
+    const user = { name: name.trim(), email: cleanEmail, password, currency };
+
+    const userSaved = await storeSet(`user:${user.email}`, JSON.stringify(user));
+    if (!userSaved) {
+      setBusy(false);
+      const proceedAnyway = window.confirm(
+        `Storage isn't responding right now (${lastStorageError || "unknown error"}). ` +
+        `You can continue for this session, but your account won't be saved for next time. Continue anyway?`
+      );
+      if (!proceedAnyway) {
+        setError(`Couldn't create your account: ${lastStorageError || "unknown storage error"}`);
+        return;
+      }
+      onLoggedIn(user);
+      return;
+    }
+
+    await storeSet(`balance:${user.email}`, JSON.stringify(0));
+    await storeSet(`transactions:${user.email}`, JSON.stringify([]));
+    await storeSet("session", user.email);
+
+    setBusy(false);
+    onLoggedIn(user);
+  };
+
+  const handleSignIn = async () => {
+    setError("");
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
+      setError("Enter your email and password.");
+      return;
+    }
+    setBusy(true);
+    const raw = await storeGet(`user:${cleanEmail}`);
+    if (!raw) {
+      setBusy(false);
+      setError("No account found for that email.");
+      return;
+    }
+    const user = JSON.parse(raw);
+    if (user.password !== password) {
+      setBusy(false);
+      setError("Incorrect password. Try again.");
+      return;
+    }
+    await storeSet("session", user.email);
+    setBusy(false);
+    onLoggedIn(user);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ backgroundColor: T.bg }}>
+      <div className="w-full max-w-sm">
+        <div className="flex items-center gap-2 mb-8 justify-center">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: T.accentDim }}>
+            <WalletIcon size={18} color={T.accent} />
+          </div>
+          <span className="text-xl font-semibold tracking-tight" style={{ color: T.text, ...fontDisplay }}>fintrack</span>
+        </div>
+
+        <div className="flex rounded-xl overflow-hidden mb-6" style={{ border: `1px solid ${T.border}` }}>
+          <button
+            onClick={() => { setMode("signup"); setError(""); }}
+            className="flex-1 py-2.5 text-sm font-medium"
+            style={{ backgroundColor: mode === "signup" ? T.surface2 : "transparent", color: mode === "signup" ? T.text : T.textMuted, ...fontBody }}
+          >
+            Sign up
+          </button>
+          <button
+            onClick={() => { setMode("signin"); setError(""); }}
+            className="flex-1 py-2.5 text-sm font-medium"
+            style={{ backgroundColor: mode === "signin" ? T.surface2 : "transparent", color: mode === "signin" ? T.text : T.textMuted, ...fontBody }}
+          >
+            Sign in
+          </button>
+        </div>
+
+        {mode === "signup" ? (
+          <div>
+            <Field label="Name">
+              <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Asha Kapoor" />
+            </Field>
+            <Field label="Email">
+              <TextInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="asha@email.com" />
+            </Field>
+            <Field label="Password">
+              <TextInput type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+            </Field>
+            <Field label="Currency you'll track">
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none"
+                style={inputStyle}
+              >
+                {Object.entries(CURRENCIES).map(([code, c]) => (
+                  <option key={code} value={code}>{c.symbol} {code} — {c.label}</option>
+                ))}
+              </select>
+            </Field>
+            {error && <ErrorNote text={error} />}
+            <Button onClick={handleSignUp} disabled={busy} className="w-full mt-1">
+              {busy ? <LoaderIcon size={16} /> : "Create account"}
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <Field label="Email">
+              <TextInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="asha@email.com" />
+            </Field>
+            <Field label="Password">
+              <TextInput type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+            </Field>
+            {error && <ErrorNote text={error} />}
+            <Button onClick={handleSignIn} disabled={busy} className="w-full mt-1">
+              {busy ? <LoaderIcon size={16} /> : "Log in"}
+            </Button>
+          </div>
+        )}
+
+        <p className="text-xs mt-6 text-center" style={{ color: T.textFaint, ...fontBody }}>
+          Your data is stored only in this browser (localStorage) — not on a server.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
+   ADD MONEY MODAL (camera -> optional AI analysis)
+--------------------------------------------------------- */
+function AddMoneyModal({ currency, onClose, onConfirm }) {
+  const fileRef = useRef(null);
+  const [preview, setPreview] = useState(null);
+  const [status, setStatus] = useState("idle"); // idle | analyzing | ready | error
+  const [amount, setAmount] = useState("");
+  const [errMsg, setErrMsg] = useState("");
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStatus("analyzing");
+    setErrMsg("");
+    try {
+      const { data, mediaType, dataUrl } = await fileToBase64(file);
+      setPreview(dataUrl);
+      const prompt = `This photo shows physical cash (notes and/or coins) laid out. The currency in use is ${CURRENCIES[currency].label} (${currency}). Add up the visible denominations and estimate the total amount. Respond with ONLY raw JSON, no markdown, in this exact shape: {"amount": <number>, "notes_detected": ["short description", ...]}. If you cannot see money clearly, make your best-effort estimate and set amount to 0 if truly nothing is visible.`;
+      const result = await analyzeImage(data, mediaType, prompt);
+      setAmount(String(result.amount ?? 0));
+      setStatus("ready");
+    } catch (err) {
+      setStatus("error");
+      setErrMsg("Couldn't auto-read that photo. Enter the amount by hand below.");
+    }
+  };
+
+  return (
+    <Modal title="Add money" onClose={onClose}>
+      {!preview && (
+        <div className="flex flex-col items-center gap-4 py-6">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: T.chip, border: `1px solid ${T.border}` }}>
+            <CameraIcon size={26} color={T.accent} />
+          </div>
+          <p className="text-sm text-center" style={{ color: T.textMuted, ...fontBody }}>
+            Lay your cash on a flat surface and take a photo, or skip straight to entering an amount.
+          </p>
+          <Button onClick={() => fileRef.current?.click()} className="w-full">
+            <CameraIcon size={16} /> Take photo of cash
+          </Button>
+          <Button variant="secondary" onClick={() => setStatus("ready")} className="w-full">
+            Enter amount manually
+          </Button>
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
+        </div>
+      )}
+
+      {preview && (
+        <div>
+          <img src={preview} alt="Cash preview" className="w-full rounded-lg mb-4 max-h-52 object-cover" style={{ border: `1px solid ${T.border}` }} />
+          {status === "analyzing" && (
+            <div className="flex items-center gap-2 justify-center py-3 text-sm" style={{ color: T.textMuted, ...fontBody }}>
+              <LoaderIcon size={16} /> Analyzing photo…
+            </div>
+          )}
+          {(status === "ready" || status === "error") && (
+            <div>
+              {errMsg && <ErrorNote text={errMsg} />}
+              <Field label={`Detected amount (${currency})`}>
+                <TextInput
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  style={{ ...fontMono, fontSize: "1.1rem" }}
+                />
+              </Field>
+              <p className="text-xs mb-4" style={{ color: T.textFaint, ...fontBody }}>
+                Double-check the amount against your photo, then confirm. This photo is your proof for the deposit.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
+                <Button
+                  className="flex-1"
+                  disabled={!amount || Number(amount) <= 0}
+                  onClick={() => onConfirm(Number(amount))}
+                >
+                  <CheckIcon size={16} /> Add {CURRENCIES[currency].symbol}{amount || 0}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {status === "ready" && !preview && (
+        <div>
+          <Field label={`Amount (${currency})`}>
+            <TextInput
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              style={{ ...fontMono, fontSize: "1.1rem" }}
+              autoFocus
+            />
+          </Field>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
+            <Button
+              className="flex-1"
+              disabled={!amount || Number(amount) <= 0}
+              onClick={() => onConfirm(Number(amount))}
+            >
+              <CheckIcon size={16} /> Add {CURRENCIES[currency].symbol}{amount || 0}
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+/* ---------------------------------------------------------
+   ADD EXPENSE MODAL (receipt -> optional AI extraction)
+--------------------------------------------------------- */
+function AddExpenseModal({ currency, onClose, onConfirm }) {
+  const fileRef = useRef(null);
+  const [preview, setPreview] = useState(null);
+  const [title, setTitle] = useState("");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("Other");
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState("idle");
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStatus("analyzing");
+    try {
+      const { data, mediaType, dataUrl } = await fileToBase64(file);
+      setPreview(dataUrl);
+      const prompt = `This is a photo of a purchase receipt. Extract details and respond with ONLY raw JSON in this exact shape: {"vendor": "short vendor/store name", "amount": <number, total paid>, "category": one of ["Food","Games","Study","Shopping","Travel","Bills","Health","Entertainment","Other"]}. Use your best judgment if any field is unclear.`;
+      const result = await analyzeImage(data, mediaType, prompt);
+      if (result.vendor) setTitle(result.vendor);
+      if (result.amount) setAmount(String(result.amount));
+      if (result.category) setCategory(result.category);
+      setStatus("ready");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  const canSave = title.trim() && amount && Number(amount) > 0;
+
+  return (
+    <Modal title="Add a transaction" onClose={onClose}>
+      <Field label="What was it for">
+        <TextInput
+          value={title}
+          onChange={(e) => { setTitle(e.target.value); if (!preview) setCategory(guessCategory(e.target.value)); }}
+          placeholder="e.g. Steam summer sale"
+        />
+      </Field>
+      <Field label={`Amount (${currency})`}>
+        <TextInput type="number" value={amount} onChange={(e) => setAmount(e.target.value)} style={fontMono} placeholder="0" />
+      </Field>
+      <Field label="Category">
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm outline-none" style={inputStyle}>
+          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </Field>
+      <Field label="Receipt (proof of purchase, optional)">
+        {!preview ? (
+          <Button variant="secondary" onClick={() => fileRef.current?.click()} className="w-full">
+            <ReceiptIcon size={16} /> Upload receipt photo
+          </Button>
+        ) : (
+          <img src={preview} alt="Receipt" className="w-full rounded-lg max-h-40 object-cover" style={{ border: `1px solid ${T.border}` }} />
+        )}
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+        {status === "analyzing" && (
+          <div className="flex items-center gap-2 mt-2 text-xs" style={{ color: T.textMuted }}>
+            <LoaderIcon size={14} /> Reading receipt…
+          </div>
+        )}
+      </Field>
+      <Field label="Note (optional)">
+        <TextInput type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Any extra detail" />
+      </Field>
+      <div className="flex gap-2 mt-2">
+        <Button variant="secondary" onClick={onClose} className="flex-1">Cancel</Button>
+        <Button
+          className="flex-1"
+          disabled={!canSave}
+          onClick={() => onConfirm({ title: title.trim(), amount: Number(amount), category, note, hasProof: !!preview })}
+        >
+          <CheckIcon size={16} /> Save
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+/* ---------------------------------------------------------
+   HOME SCREEN
+--------------------------------------------------------- */
+function HomeScreen({ user, balance, transactions, onAddMoney, onAddExpense, onLogout }) {
+  const [showAddMoney, setShowAddMoney] = useState(false);
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const symbol = CURRENCIES[user.currency]?.symbol || "";
+
+  return (
+    <div className="pb-24">
+      <div className="flex items-center justify-between px-5 pt-6 pb-4">
+        <div>
+          <p className="text-xs" style={{ color: T.textFaint, ...fontBody }}>Welcome back</p>
+          <p className="text-lg font-semibold" style={{ color: T.text, ...fontDisplay }}>{user.name}</p>
+        </div>
+        <button onClick={onLogout} title="Log out" className="flex items-center gap-1 text-xs" style={{ color: T.textFaint, ...fontBody }}>
+          <LogOutIcon size={16} /> Log out
+        </button>
+      </div>
+
+      <div className="mx-5 rounded-2xl p-5 flex items-center justify-between" style={{ backgroundColor: T.surface, border: `1px solid ${T.border}` }}>
+        <div>
+          <p className="text-xs uppercase tracking-wide mb-1" style={{ color: T.textFaint, ...fontBody }}>Balance</p>
+          <p className="text-3xl font-semibold" style={{ color: balance < 0 ? T.danger : T.text, ...fontMono }}>
+            {fmtMoney(balance, symbol)}
+          </p>
+        </div>
+        <Button onClick={() => setShowAddMoney(true)}>
+          <PlusIcon size={16} /> Add money
+        </Button>
+      </div>
+
+      <div className="px-5 mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold tracking-wide uppercase" style={{ color: T.textMuted, ...fontBody }}>Transactions</h3>
+          <button onClick={() => setShowAddExpense(true)} className="text-sm flex items-center gap-1" style={{ color: T.accent, ...fontBody }}>
+            <PlusIcon size={14} /> Add
+          </button>
+        </div>
+
+        {transactions.length === 0 ? (
+          <div className="rounded-xl py-8 text-center" style={{ backgroundColor: T.surface, border: `1px dashed ${T.border}` }}>
+            <p className="text-sm" style={{ color: T.textFaint, ...fontBody }}>No transactions yet. Add money or log a purchase to start your ledger.</p>
+          </div>
+        ) : (
+          <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${T.border}` }}>
+            {transactions.slice().reverse().map((tx, i) => (
+              <div
+                key={tx.id}
+                className="flex items-center justify-between px-4 py-3"
+                style={{ backgroundColor: T.surface, borderTop: i === 0 ? "none" : `1px solid ${T.borderSoft}` }}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: tx.type === "credit" ? T.accentDim : T.dangerDim }}
+                  >
+                    {tx.type === "credit" ? <TrendUpIcon size={14} color={T.accent} /> : <TrendDownIcon size={14} color={T.danger} />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm truncate" style={{ color: T.text, ...fontBody }}>{tx.title}</p>
+                    <p className="text-xs" style={{ color: T.textFaint, ...fontBody }}>
+                      {tx.category ? `${tx.category} · ` : ""}{new Date(tx.date).toLocaleDateString()}
+                      {tx.hasProof && " · proof attached"}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm shrink-0 ml-2" style={{ color: tx.type === "credit" ? T.accent : T.danger, ...fontMono }}>
+                  {tx.type === "credit" ? "+" : "-"}{symbol}{tx.amount.toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showAddMoney && (
+        <AddMoneyModal
+          currency={user.currency}
+          onClose={() => setShowAddMoney(false)}
+          onConfirm={(amt) => { onAddMoney(amt); setShowAddMoney(false); }}
+        />
+      )}
+      {showAddExpense && (
+        <AddExpenseModal
+          currency={user.currency}
+          onClose={() => setShowAddExpense(false)}
+          onConfirm={(exp) => { onAddExpense(exp); setShowAddExpense(false); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
+   ANALYTICS SCREEN (simple CSS bars, no chart library needed)
+--------------------------------------------------------- */
+function AnalyticsScreen({ user, transactions }) {
+  const symbol = CURRENCIES[user.currency]?.symbol || "";
+  const totals = {};
+  transactions.filter((t) => t.type === "debit").forEach((t) => {
+    const cat = t.category || "Other";
+    totals[cat] = (totals[cat] || 0) + t.amount;
+  });
+  const data = Object.entries(totals)
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((a, b) => b.amount - a.amount);
+  const max = data.length ? data[0].amount : 0;
+
+  return (
+    <div className="pb-24 px-5 pt-6">
+      <h2 className="text-lg font-semibold mb-1" style={{ color: T.text, ...fontDisplay }}>Spending breakdown</h2>
+      <p className="text-xs mb-6" style={{ color: T.textFaint, ...fontBody }}>Where your money has gone, highest first.</p>
+
+      {data.length === 0 ? (
+        <div className="rounded-xl py-10 text-center" style={{ backgroundColor: T.surface, border: `1px dashed ${T.border}` }}>
+          <BarChartIcon size={28} color={T.textFaint} className="mx-auto mb-2" />
+          <p className="text-sm" style={{ color: T.textFaint, ...fontBody }}>No expenses logged yet.</p>
+        </div>
+      ) : (
+        <div className="rounded-xl p-4" style={{ backgroundColor: T.surface, border: `1px solid ${T.border}` }}>
+          <div className="space-y-3">
+            {data.map((d, i) => (
+              <div key={d.category}>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span style={{ color: T.text, ...fontBody }}>{d.category}</span>
+                  <span style={{ color: T.textMuted, ...fontMono }}>{symbol}{d.amount.toLocaleString()}</span>
+                </div>
+                <div className="w-full rounded-full h-2.5" style={{ backgroundColor: T.borderSoft }}>
+                  <div
+                    className="h-2.5 rounded-full"
+                    style={{ width: `${max ? (d.amount / max) * 100 : 0}%`, backgroundColor: i === 0 ? T.accent : T.accentDim }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
+   BOTTOM NAV
+--------------------------------------------------------- */
+function BottomNav({ screen, setScreen }) {
+  const items = [
+    { id: "home", icon: HomeIconSvg, label: "Home" },
+    { id: "analytics", icon: BarChartIcon, label: "Insights" },
+  ];
+  return (
+    <div
+      className="fixed bottom-0 left-0 right-0 flex items-center justify-around py-3"
+      style={{ backgroundColor: T.surface, borderTop: `1px solid ${T.border}` }}
+    >
+      {items.map(({ id, icon: IconComp, label }) => (
+        <button key={id} onClick={() => setScreen(id)} className="flex flex-col items-center gap-1">
+          <IconComp size={20} color={screen === id ? T.accent : T.textFaint} />
+          <span className="text-[10px]" style={{ color: screen === id ? T.accent : T.textFaint, ...fontBody }}>{label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
+   ROOT APP
+--------------------------------------------------------- */
+function App() {
+  const [user, setUser] = useState(null);
+  const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState([]);
+  const [screen, setScreen] = useState("home");
+  const [checkingSession, setCheckingSession] = useState(true);
+  const touchStartX = useRef(null);
+
+  const loadUserData = useCallback(async (u) => {
+    const balRaw = await storeGet(`balance:${u.email}`);
+    const txRaw = await storeGet(`transactions:${u.email}`);
+    setBalance(balRaw ? JSON.parse(balRaw) : 0);
+    setTransactions(txRaw ? JSON.parse(txRaw) : []);
+    setUser(u);
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const sessionEmail = await storeGet("session");
+      if (sessionEmail) {
+        const raw = await storeGet(`user:${sessionEmail}`);
+        if (raw) {
+          await loadUserData(JSON.parse(raw));
+        }
+      }
+      setCheckingSession(false);
+    })();
+  }, [loadUserData]);
+
+  const handleLoggedIn = (u) => loadUserData(u);
+
+  const handleLogout = async () => {
+    await storeSet("session", "");
+    setUser(null);
+    setScreen("home");
+  };
+
+  const handleAddMoney = async (amount) => {
+    const newBalance = balance + amount;
+    const newTx = {
+      id: `${Date.now()}`,
+      type: "credit",
+      title: "Cash deposit",
+      amount,
+      date: Date.now(),
+      hasProof: true,
+    };
+    const newTxs = [...transactions, newTx];
+    setBalance(newBalance);
+    setTransactions(newTxs);
+    await storeSet(`balance:${user.email}`, JSON.stringify(newBalance));
+    await storeSet(`transactions:${user.email}`, JSON.stringify(newTxs));
+  };
+
+  const handleAddExpense = async (exp) => {
+    const newBalance = balance - exp.amount;
+    const newTx = {
+      id: `${Date.now()}`,
+      type: "debit",
+      title: exp.title,
+      amount: exp.amount,
+      category: exp.category,
+      note: exp.note,
+      hasProof: exp.hasProof,
+      date: Date.now(),
+    };
+    const newTxs = [...transactions, newTx];
+    setBalance(newBalance);
+    setTransactions(newTxs);
+    await storeSet(`balance:${user.email}`, JSON.stringify(newBalance));
+    await storeSet(`transactions:${user.email}`, JSON.stringify(newTxs));
+  };
+
+  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) < 60) return;
+    if (dx < 0 && screen === "home") setScreen("analytics");
+    if (dx > 0 && screen === "analytics") setScreen("home");
+    touchStartX.current = null;
+  };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: T.bg }}>
+        <LoaderIcon size={24} color={T.accent} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div style={{ backgroundColor: T.bg }}>
+        <AuthScreen onLoggedIn={handleLoggedIn} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: T.bg }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      {screen === "home" && (
+        <HomeScreen
+          user={user}
+          balance={balance}
+          transactions={transactions}
+          onAddMoney={handleAddMoney}
+          onAddExpense={handleAddExpense}
+          onLogout={handleLogout}
+        />
+      )}
+      {screen === "analytics" && <AnalyticsScreen user={user} transactions={transactions} />}
+      <BottomNav screen={screen} setScreen={setScreen} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
