@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GoldTrack Finance</title>
+<style>
+:root{--bg:#050505;--panel:#0e0e0e;--panel2:#151515;--gold:#d4af37;--gold2:#f1d56a;--text:#f7f7f7;--muted:#969696;--danger:#ff6868;--ok:#63e39a;--line:#282828}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -20%,#231e0c 0,#050505 40%);color:var(--text);font:15px Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;min-height:100vh}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}.app{max-width:1150px;margin:auto;padding:18px 18px 70px}.auth{min-height:100vh;display:grid;place-items:center;padding:20px}.card{background:linear-gradient(145deg,#151515,#090909);border:1px solid #3b3216;border-radius:22px;box-shadow:0 20px 60px #0008}.auth-card{width:min(440px,100%);padding:30px}.brand{color:var(--gold);font-size:28px;font-weight:800;letter-spacing:.12em}.center{text-align:center}.muted{color:var(--muted)}label{display:block;color:#c9c9c9;font-size:13px;margin:14px 0 7px}input,select,textarea{width:100%;background:#0a0a0a;color:var(--text);border:1px solid #333;border-radius:11px;padding:13px;outline:0}input:focus,select:focus,textarea:focus{border-color:var(--gold)}.btn{border:0;border-radius:11px;padding:13px 16px;font-weight:750}.primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#080808}.secondary{background:#171717;color:var(--gold);border:1px solid #4d4119}.danger{color:#ff9090}.link{color:var(--gold);cursor:pointer}.top{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:10px 0 22px}.id{color:var(--gold);font-weight:800}.user{color:var(--muted);margin-top:4px}.top-actions{display:flex;gap:8px}.hero{padding:26px;margin-bottom:18px}.hero small{color:var(--muted)}.balance{font-size:44px;font-weight:850;margin:10px 0 5px;word-break:break-word}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.action{padding:20px;text-align:left;min-height:110px}.action b{display:block;font-size:17px;margin-bottom:7px}.tabs{position:sticky;top:0;z-index:10;background:#050505e8;backdrop-filter:blur(12px);padding:10px 0;display:flex;gap:8px;overflow:auto}.tab{white-space:nowrap;background:#111;color:#aaa;border:1px solid #292929;border-radius:999px;padding:9px 14px}.tab.active{color:#080808;background:var(--gold);border-color:var(--gold)}.section{padding:20px;margin-top:14px}.section h2{margin:0 0 16px;color:var(--gold);font-size:20px}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.list{display:grid;gap:9px}.item{padding:13px;background:#121212;border:1px solid #222;border-radius:13px}.income{color:var(--ok)}.expense{color:var(--danger)}.meta{font-size:12px;color:var(--muted);margin-top:4px}.modal{position:fixed;inset:0;background:#000b;display:grid;place-items:center;padding:20px;z-index:50}.modal-card{width:min(500px,100%);padding:24px;max-height:90vh;overflow:auto}.modal-head{display:flex;justify-content:space-between;align-items:center}.close{background:none;border:0;color:#aaa;font-size:25px}.actions-row{display:flex;gap:10px;margin-top:18px}.actions-row>*{flex:1}.chart{height:250px;display:flex;align-items:end;gap:8px;border-bottom:1px solid #444;padding:10px 5px}.bar-wrap{height:100%;flex:1;display:flex;align-items:end;gap:3px}.bar{width:100%;background:linear-gradient(#f1d56a,#8c6b0d);border-radius:5px 5px 0 0;min-height:3px}.chat{height:300px;overflow:auto;background:#080808;border-radius:12px;padding:12px}.msg{max-width:78%;padding:9px 11px;border-radius:12px;margin:7px 0;background:#191919}.msg.mine{margin-left:auto;background:#3b3216}.notice{padding:12px;border-radius:10px;background:#16120a;border:1px solid #443914;color:#d9c36e}.toast{position:fixed;right:18px;bottom:18px;background:#171717;border:1px solid #4d4119;color:#fff;padding:13px 16px;border-radius:12px;z-index:100;max-width:360px}.file{padding:10px;border:1px dashed #4d4119;border-radius:10px}.empty{color:#777;padding:18px 0;text-align:center}.proof-img{max-width:100px;max-height:80px;border-radius:6px;margin-top:6px;display:block;border:1px solid #333}@media(max-width:650px){.grid{grid-template-columns:1fr}.balance{font-size:35px}.top{align-items:flex-start}.top-actions{flex-direction:column}.hero{padding:20px}}
+</style>
+</head>
+<body>
+
+<div id="authView" class="auth">
+  <div class="card auth-card">
+    <div class="center">
+      <div class="brand">GOLDTRACK</div>
+      <p class="muted">Private personal finance tracking.</p>
+    </div>
+    <div id="authError" class="notice hidden"></div>
+
+    <form id="loginForm">
+      <h2>Log In</h2>
+      <label>Email</label><input id="loginEmail" type="email" required autocomplete="email">
+      <label>Password</label><input id="loginPassword" type="password" required autocomplete="current-password">
+      <button type="submit" class="btn primary" style="width:100%;margin-top:16px">Log In</button>
+      <p class="center muted">New here? <span class="link" id="showSignup">Create Account</span></p>
+    </form>
+
+    <form id="signupForm" class="hidden">
+      <h2>Create Account</h2>
+      <label>Full Name</label><input id="signupName" required autocomplete="name">
+      <label>Email</label><input id="signupEmail" type="email" required autocomplete="email">
+      <label>Password</label><input id="signupPassword" type="password" minlength="6" required autocomplete="new-password">
+      <label>Initial Balance</label><input id="signupBalance" type="number" step="0.01" value="1000" required>
+      <label>Preferred Currency</label>
+      <select id="signupCurrency"><option value="INR">₹ Rupees</option><option value="USD">$ Dollars</option><option value="EUR">€ Euros</option><option value="GBP">£ Pounds</option><option value="JPY">¥ Yen</option><option value="AED">د.إ Dirhams</option></select>
+      <button type="submit" class="btn primary" style="width:100%;margin-top:16px">Create Account</button>
+      <p class="center muted">Already registered? <span class="link" id="showLogin">Log In</span></p>
+    </form>
+  </div>
+</div>
+
+<div id="appView" class="app hidden">
+  <header class="top">
+    <div><div id="kid" class="id">#KID-0000</div><div id="profileName" class="user"></div></div>
+    <div class="top-actions"><button class="btn secondary" id="logoutBtn">Log Out</button></div>
+  </header>
+
+  <div class="card hero">
+    <small>Available Balance</small>
+    <div id="balance" class="balance">—</div>
+    <small id="currencyName"></small>
+  </div>
+
+  <div class="grid">
+    <button class="card action" id="addMoneyBtn"><b>＋ Add Money</b><span class="muted">Amount + mandatory proof photo</span></button>
+    <button class="card action" id="expenseBtn"><b>－ Add Expense</b><span class="muted">Amount + category + receipt</span></button>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-screen="dashboard">Dashboard</button>
+    <button class="tab" data-screen="analytics">Personal Analytics</button>
+    <button class="tab" data-screen="social">Social & Friends</button>
+    <button class="tab" data-screen="messages">Messages</button>
+    <button class="tab" data-screen="challenges">Challenges</button>
+  </nav>
+
+  <main>
+    <section id="dashboard" class="screen">
+      <div class="card section"><h2>Recent Activity</h2><div id="recentList" class="list"></div></div>
+    </section>
+
+    <section id="analytics" class="screen hidden">
+      <div class="card section"><h2>Spending Analytics (7 Days)</h2><div id="chart" class="chart"></div><div id="chartLabels"></div></div>
+      <div class="card section"><h2>Private History</h2><div id="historyList" class="list"></div></div>
+    </section>
+
+    <section id="social" class="screen hidden">
+      <div class="card section">
+        <h2>Find Friends</h2><input id="friendKid" placeholder="#KID-1234"><button class="btn primary" style="margin-top:10px" id="findFriend">Search</button>
+        <div id="friendResult"></div>
+      </div>
+      <div class="card section"><h2>Friends</h2><div id="friendsList" class="list"></div></div>
+    </section>
+
+    <section id="messages" class="screen hidden">
+      <div class="card section">
+        <h2>Direct Messages</h2>
+        <select id="messageFriend"></select>
+        <div id="chat" class="chat" style="margin-top:12px"></div>
+        <div class="actions-row"><input id="messageText" placeholder="Write a message..."><button class="btn primary" id="sendMessage">Send</button></div>
+      </div>
+    </section>
+
+    <section id="challenges" class="screen hidden">
+      <div class="card section">
+        <h2>Friendly Challenges</h2>
+        <p class="muted">Create a private challenge with a friend without exposing transaction proofs or history.</p>
+        <select id="challengeFriend"></select>
+        <label>Challenge Title</label><input id="challengeTitle" placeholder="Save ₹5,000 this month">
+        <label>Target Amount</label><input id="challengeTarget" type="number" min="1">
+        <div class="actions-row"><button class="btn primary" id="createChallenge">Create Challenge</button></div>
+      </div>
+      <div class="card section"><h2>My Challenges</h2><div id="challengeList" class="list"></div></div>
+    </section>
+  </main>
+</div>
+
+<div id="moneyModal" class="modal hidden"><div class="card modal-card">
+  <div class="modal-head"><h2>Add Money</h2><button class="close" data-close="moneyModal">×</button></div>
+  <form id="moneyForm"><label>Amount</label><input id="moneyAmount" type="number" min="0.01" step="0.01" required>
+  <label>Proof Photo (Required)</label><input id="moneyProof" class="file" type="file" accept="image/*" required>
+  <div class="actions-row"><button type="button" class="btn secondary" data-close="moneyModal">Cancel</button><button type="submit" class="btn primary">Save</button></div></form>
+</div></div>
+
+<div id="expenseModal" class="modal hidden"><div class="card modal-card">
+  <div class="modal-head"><h2>Add Expense</h2><button class="close" data-close="expenseModal">×</button></div>
+  <form id="expenseForm"><label>Amount</label><input id="expenseAmount" type="number" min="0.01" step="0.01" required>
+  <label>Category</label><select id="expenseCategory"><option>Games</option><option>Study</option><option>Tools</option><option>Food</option><option>Shopping</option><option>Travel</option><option>Bills</option><option>Other</option></select>
+  <label>Receipt / Proof Photo (Required)</label><input id="expenseProof" class="file" type="file" accept="image/*" required>
+  <div class="actions-row"><button type="button" class="btn secondary" data-close="expenseModal">Cancel</button><button type="submit" class="btn primary">Save</button></div></form>
+</div></div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+// SAFELY HANDLE STORAGE ACROSS LOCALHOST AND FILE SCHEMES
+const store = {
+  get: (key, fallback) => {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch(e) {
+      console.warn("Storage read error:", e);
+      return fallback;
+    }
+  },
+  set: (key, val) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch(e) {
+      console.warn("Storage write error:", e);
+    }
+  }
+};
+
+const DB = {
+  getUsers: () => store.get('gt_users', []),
+  setUsers: (u) => store.set('gt_users', u),
+  getCurrUser: () => store.get('gt_curr_user', null),
+  setCurrUser: (u) => store.set('gt_curr_user', u),
+  getTx: (kid) => store.get('gt_tx_' + kid, []),
+  setTx: (kid, tx) => store.set('gt_tx_' + kid, tx),
+  getFriends: (kid) => store.get('gt_friends_' + kid, []),
+  setFriends: (kid, f) => store.set('gt_friends_' + kid, f),
+  getMsgs: () => store.get('gt_msgs', []),
+  setMsgs: (m) => store.set('gt_msgs', m),
+  getChallenges: () => store.get('gt_challenges', []),
+  setChallenges: (c) => store.set('gt_challenges', c)
+};
+
+const $ = id => document.getElementById(id);
+const moneyFmt = (amt, curr) => new Intl.NumberFormat(undefined, { style: "currency", currency: curr || "INR" }).format(Number(amt) || 0);
+function toast(msg) { $("toast").textContent = msg; $("toast").classList.remove("hidden"); setTimeout(() => $("toast").classList.add("hidden"), 3500); }
+function authError(msg) { $("authError").textContent = msg; $("authError").classList.remove("hidden"); }
+function clearAuthError() { $("authError").classList.add("hidden"); }
+function showAuth(which) { ["loginForm", "signupForm"].forEach(x => $(x).classList.toggle("hidden", x !== which)); clearAuthError(); }
+function modal(id, open = true) { $(id).classList.toggle("hidden", !open); }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c])); }
+
+$("showSignup").onclick = () => showAuth("signupForm");
+$("showLogin").onclick = () => showAuth("loginForm");
+
+// SIGNUP LOGIC
+$("signupForm").onsubmit = e => {
+  e.preventDefault(); 
+  clearAuthError();
+
+  try {
+    const name = $("signupName").value.trim();
+    const email = $("signupEmail").value.trim().toLowerCase();
+    const pass = $("signupPassword").value;
+    const curr = $("signupCurrency").value;
+    const initialBal = Number($("signupBalance").value) || 0;
+
+    if (!name || !email || !pass) {
+      authError("Please fill in all required fields.");
+      return;
+    }
+
+    const users = DB.getUsers();
+    if (users.some(u => u.email === email)) { 
+      authError("Email already registered."); 
+      return; 
+    }
+
+    const kid = "#KID-" + Math.floor(1000 + Math.random() * 9000);
+    const newUser = { kid, name, email, pass, balance: initialBal, currency: curr };
+    
+    users.push(newUser);
+    DB.setUsers(users);
+    DB.setCurrUser(newUser);
+    
+    toast("Account created successfully!");
+    boot();
+  } catch (err) {
+    console.error("Signup Error:", err);
+    authError("Could not save account data.");
+  }
+};
+
+// LOGIN LOGIC
+$("loginForm").onsubmit = e => {
+  e.preventDefault(); 
+  clearAuthError();
+  const email = $("loginEmail").value.trim().toLowerCase();
+  const pass = $("loginPassword").value;
+  const user = DB.getUsers().find(u => u.email === email && u.pass === pass);
+  
+  if (!user) { 
+    authError("Invalid email or password."); 
+    return; 
+  }
+  
+  DB.setCurrUser(user);
+  boot();
+};
+
+$("logoutBtn").onclick = () => { DB.setCurrUser(null); location.reload(); };
+
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => modal(b.dataset.close, false));
+$("addMoneyBtn").onclick = () => modal("moneyModal");
+$("expenseBtn").onclick = () => modal("expenseModal");
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => switchScreen(b.dataset.screen));
+
+function switchScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("hidden", s.id !== id));
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.screen === id));
+  if (id === "analytics") renderAnalytics();
+  if (id === "social") loadFriends();
+  if (id === "messages") loadFriends();
+  if (id === "challenges") loadChallenges();
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ADD MONEY LOGIC
+$("moneyForm").onsubmit = async e => {
+  e.preventDefault();
+  try {
+    const amt = Number($("moneyAmount").value), file = $("moneyProof").files[0];
+    if (amt <= 0) throw new Error("Enter a valid amount.");
+    if (!file) throw new Error("Proof photo is required.");
+
+    const proofBase64 = await fileToBase64(file);
+    const user = DB.getCurrUser();
+    user.balance += amt; // Dynamic calculation
+    
+    DB.setCurrUser(user);
+    const users = DB.getUsers();
+    const idx = users.findIndex(u => u.kid === user.kid);
+    if (idx !== -1) { users[idx] = user; DB.setUsers(users); }
+
+    const tx = DB.getTx(user.kid);
+    tx.unshift({ type: "income", amount: amt, category: "Added Money", proof: proofBase64, created_at: new Date().toISOString() });
+    DB.setTx(user.kid, tx);
+
+    e.target.reset(); modal("moneyModal", false); toast("Money added!"); renderAll();
+  } catch (err) { toast(err.message); }
+};
+
+// ADD EXPENSE LOGIC
+$("expenseForm").onsubmit = async e => {
+  e.preventDefault();
+  try {
+    const amt = Number($("expenseAmount").value), category = $("expenseCategory").value, file = $("expenseProof").files[0];
+    if (amt <= 0) throw new Error("Enter a valid amount.");
+    if (!file) throw new Error("Receipt / proof image is required.");
+
+    const proofBase64 = await fileToBase64(file);
+    const user = DB.getCurrUser();
+    user.balance -= amt; // Auto-subtract expense from running total
+    
+    DB.setCurrUser(user);
+    const users = DB.getUsers();
+    const idx = users.findIndex(u => u.kid === user.kid);
+    if (idx !== -1) { users[idx] = user; DB.setUsers(users); }
+
+    const tx = DB.getTx(user.kid);
+    tx.unshift({ type: "expense", amount: amt, category, proof: proofBase64, created_at: new Date().toISOString() });
+    DB.setTx(user.kid, tx);
+
+    e.target.reset(); modal("expenseModal", false); toast("Expense recorded!"); renderAll();
+  } catch (err) { toast(err.message); }
+};
+
+function boot() {
+  const user = DB.getCurrUser();
+  if (!user) { $("authView").classList.remove("hidden"); $("appView").classList.add("hidden"); return; }
+  $("authView").classList.add("hidden"); $("appView").classList.remove("hidden");
+  renderAll();
+}
+
+function renderAll() {
+  const user = DB.getCurrUser();
+  $("kid").textContent = user.kid;
+  $("profileName").textContent = user.name;
+  $("balance").textContent = moneyFmt(user.balance, user.currency);
+  $("currencyName").textContent = user.currency;
+
+  const tx = DB.getTx(user.kid);
+  renderRecent(tx, user.currency);
+  renderHistory(tx, user.currency);
+  renderAnalytics();
+}
+
+function renderRecent(tx, curr) {
+  const list = $("recentList");
+  if (!tx.length) { list.innerHTML = '<div class="empty">No activity yet.</div>'; return; }
+  list.innerHTML = tx.slice(0, 8).map(t => `
+    <div class="item row">
+      <div>
+        <b>${esc(t.category)}</b>
+        <div class="meta">${new Date(t.created_at).toLocaleString()}</div>
+        ${t.proof ? `<img src="${t.proof}" class="proof-img" alt="proof">` : ''}
+      </div>
+      <strong class="${t.type === "income" ? "income" : "expense"}">${t.type === "income" ? "+" : "-"}${moneyFmt(t.amount, curr)}</strong>
+    </div>`).join("");
+}
+
+function renderHistory(tx, curr) {
+  const list = $("historyList");
+  if (!tx.length) { list.innerHTML = '<div class="empty">No transactions yet.</div>'; return; }
+  list.innerHTML = tx.map(t => `
+    <div class="item row">
+      <div>
+        <b>${esc(t.category)}</b>
+        <div class="meta">${new Date(t.created_at).toLocaleString()}</div>
+        ${t.proof ? `<img src="${t.proof}" class="proof-img" alt="proof">` : ''}
+      </div>
+      <strong class="${t.type === "income" ? "income" : "expense"}">${t.type === "income" ? "+" : "-"}${moneyFmt(t.amount, curr)}</strong>
+    </div>`).join("");
+}
+
+function renderAnalytics() {
+  const user = DB.getCurrUser();
+  const tx = DB.getTx(user.kid);
+  const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i)); return d; });
+  const vals = days.map(d => tx.filter(t => t.type === "expense" && new Date(t.created_at).toDateString() === d.toDateString()).reduce((a, t) => a + Number(t.amount), 0));
+  const max = Math.max(...vals, 1);
+  $("chart").innerHTML = vals.map(v => `<div class="bar-wrap"><div class="bar" title="${moneyFmt(v, user.currency)}" style="height:${Math.max(3, (v / max) * 100)}%"></div></div>`).join("");
+  $("chartLabels").innerHTML = `<div class="row">${days.map(d => `<span class="meta">${d.toLocaleDateString(undefined, { weekday: "short" })}</span>`).join("")}</div>`;
+}
+
+// SOCIAL & FRIENDS
+$("findFrien
