@@ -1,0 +1,56 @@
+name: Update Videos from WhatsApp
+
+on:
+  repository_dispatch:
+    types: [new_whatsapp_video]
+
+jobs:
+  update-videos:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update videos.json
+        run: |
+          # Parse the payload
+          URL="${{ github.event.client_payload.url }}"
+          TITLE="${{ github.event.client_payload.title }}"
+          
+          # Extract video ID from URL
+          if [[ $URL =~ watch\?v=([^&]*) ]]; then
+            VIDEO_ID="${BASH_REMATCH[1]}"
+          elif [[ $URL =~ youtu\.be/([^?]*) ]]; then
+            VIDEO_ID="${BASH_REMATCH[1]}"
+          elif [[ $URL =~ youtube\.com/embed/([^?]*) ]]; then
+            VIDEO_ID="${BASH_REMATCH[1]}"
+          elif [[ $URL =~ youtube\.com/shorts/([^?]*) ]]; then
+            VIDEO_ID="${BASH_REMATCH[1]}"
+          else
+            echo "Could not extract video ID from URL: $URL"
+            exit 1
+          fi
+          
+          # Construct the full YouTube URL
+          FULL_URL="https://www.youtube.com/watch?v=${VIDEO_ID}"
+          
+          # Read existing videos.json
+          VIDEOS=$(cat videos.json)
+          
+          # Add new entry using jq
+          UPDATED_VIDEOS=$(echo "$VIDEOS" | jq --arg url "$FULL_URL" --arg title "$TITLE" '. += [{"url": $url, "title": $title}]')
+          
+          # Write back to videos.json
+          echo "$UPDATED_VIDEOS" > videos.json
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          git add videos.json
+          git commit -m "Add new video: ${{ github.event.client_payload.title }}" || echo "No changes to commit"
+          git push

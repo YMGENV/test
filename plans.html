@@ -12,20 +12,19 @@
   </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Our Plans & Pricing</title>
-<meta name="google-site-verification" content="DB91DdgS0l2-ulupm4-Jn0diI-Leoq6k2OOH63HBV74" />
-<meta name="description" content="BY Solutions (YM GENV) offers affordable custom video production plans in India, from quick 30-second clips to fully scripted 3-minute videos.">
-<meta name="keywords" content="BY Solutions, YM GENV, video production, custom videos, video plans India, video pricing, promotional videos">
+<title>Plans — BY Solutions YM GENV</title>
+<meta name="description" content="Compare BY Solutions video plans — Creators Basics, Visionary Plus, and Empire Builder — with transparent pricing from ₹400 to ₹3,000.">
+<meta name="keywords" content="BY Solutions, YM GENV, video plans, video pricing, Creators Basics, Visionary Plus, Empire Builder">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://ymgenv.github.io/bysolutions/">
+<link rel="canonical" href="https://ymgenv.github.io/bysolutions/plans.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Our Plans & Pricing | BY Solutions">
-<meta property="og:description" content="Affordable custom video production plans from BY Solutions (YM GENV) — choose the length and scope that fits your budget.">
-<meta property="og:url" content="https://ymgenv.github.io/bysolutions/">
+<meta property="og:title" content="Plans — BY Solutions YM GENV">
+<meta property="og:description" content="Compare BY Solutions video plans — Creators Basics, Visionary Plus, and Empire Builder — with transparent pricing from ₹400 to ₹3,000.">
+<meta property="og:url" content="https://ymgenv.github.io/bysolutions/plans.html">
 <meta property="og:site_name" content="BY Solutions">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Our Plans & Pricing | BY Solutions">
-<meta name="twitter:description" content="Affordable custom video production plans from BY Solutions (YM GENV) — choose the length and scope that fits your budget.">
+<meta name="twitter:title" content="Plans — BY Solutions YM GENV">
+<meta name="twitter:description" content="Compare BY Solutions video plans — Creators Basics, Visionary Plus, and Empire Builder — with transparent pricing from ₹400 to ₹3,000.">
 
 <style>
   :root{
@@ -144,92 +143,58 @@
     flex-shrink:0;
     overflow:hidden;
   }
+
   .logo-slot img{
     width:100%;
     height:100%;
-    object-fit:contain;
+    object-fit:cover;
   }
 
-  .brand-name{
-    font-size:16px;
-    font-weight:700;
-    letter-spacing:0.2px;
-    color: var(--gold);
-  }
-
-  .tagline{
-    font-size: 11.5px;
-    font-weight: 600;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: var(--ink);
-    opacity: 0.85;
-    margin-top: 2px;
-  }
-
-  nav.site-nav{
+  .site-nav{
     width:100%;
     max-width:1000px;
-    padding: 4px 24px 0;
-    display:flex;
-    justify-content:center;
+    padding: 0 24px 24px;
+    margin-top: 24px;
   }
 
   .nav-inner{
     display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:8px;
-    padding: 6px;
-    background: var(--panel);
+    gap: 0;
+    background: rgba(13,23,48,0.5);
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: 10px;
+    padding: 0;
+    overflow:hidden;
   }
 
-  nav.site-nav a{
+  .site-nav a{
+    flex:1;
     color: var(--muted);
     text-decoration:none;
-    font-size: 13.5px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    padding: 9px 16px;
-    border-radius: 8px;
+    font-size:14px;
+    font-weight:500;
+    text-align:center;
+    padding: 12px 16px;
+    border-right: 1px solid var(--line);
     transition: color var(--dur-fast) var(--ease-smooth), background var(--dur-fast) var(--ease-smooth), transform var(--dur-fast) var(--ease-smooth);
-    white-space:nowrap;
     position: relative;
     will-change: transform;
   }
 
-  nav.site-nav a::after{
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), transparent);
-    transition: width var(--dur-fast) var(--ease-out);
+  .site-nav a:last-child{
+    border-right:none;
   }
 
-  nav.site-nav a:hover{
-    color: var(--ink);
-    background: rgba(94,224,192,0.1);
+  .site-nav a:hover{
+    background: rgba(94,224,192,0.08);
+    color: var(--accent);
     transform: translateY(-1px);
   }
 
-  nav.site-nav a:hover::after{
-    width: 100%;
-  }
-
-  nav.site-nav a.active{
+  .site-nav a.active{
+    background: rgba(94,224,192,0.12);
     color: var(--accent);
-    background: rgba(94,224,192,0.15);
-    font-weight: 700;
-  }
-
-  nav.site-nav a.active::after{
-    width: 100%;
-    background: var(--accent);
+    font-weight: 600;
   }
 
   main{
@@ -245,8 +210,10 @@
   .title-block h1{
     font-size: 48px;
     font-weight: 700;
-    margin: 0 0 12px 0;
+    margin: 0;
     color: var(--ink);
+    margin-bottom: 12px;
+    line-height: 1.15;
   }
 
   .subtitle{
@@ -380,52 +347,6 @@
     box-shadow: 0 0 20px rgba(232,196,104,0.2);
   }
 
-  .length-btn{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    transition: border-color var(--dur-fast) var(--ease-smooth), color var(--dur-fast) var(--ease-smooth), background var(--dur-fast) var(--ease-smooth), transform var(--dur-fast) var(--ease-smooth);
-    border: 1px solid var(--line);
-    color: var(--muted);
-    cursor: pointer;
-    position: relative;
-    will-change: transform;
-    background: rgba(13,23,48,0.5);
-  }
-
-  .length-btn:hover{
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(94,224,192,0.08);
-    transform: translateY(-1px);
-  }
-
-  .length-btn:active{
-    transform: scale(0.98);
-  }
-
-  .chevron{
-    font-size: 12px;
-    transition: transform var(--dur-fast) var(--ease-smooth);
-  }
-
-  .length-btn.open .chevron{
-    transform: rotate(180deg);
-  }
-
-  .length-list{
-    margin: 12px 0 0 0 !important;
-    padding: 12px 0 !important;
-    background: rgba(13,23,48,0.4);
-    border-radius: 8px;
-    border: 1px solid var(--line);
-  }
-
   .actions{
     display: flex;
     gap: 12px;
@@ -481,9 +402,9 @@
       flex-wrap: wrap;
     }
 
-    nav.site-nav a{
+    .site-nav a{
       flex: 0 1 auto;
-      padding: 8px 12px;
+      padding: 10px 12px;
       font-size: 12px;
     }
   }
@@ -494,10 +415,6 @@
   <header>
     <div class="header-left">
       <div class="logo-slot"></div>
-      <div>
-        <div class="brand-name">BY Solutions</div>
-        <div class="tagline">YM GENV</div>
-      </div>
     </div>
     <a href="https://bysolutions.in" class="site-url" target="_blank">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -509,9 +426,9 @@
 
   <nav class="site-nav">
     <div class="nav-inner">
-      <a href="index.html" class="active">Home</a>
+      <a href="index.html">Home</a>
       <a href="about.html">About Us</a>
-      <a href="plans.html">Plans</a>
+      <a href="plans.html" class="active">Plans</a>
       <a href="video-examples.html">Video Examples</a>
       <a href="contact.html">Contact Us</a>
     </div>
@@ -519,57 +436,48 @@
 
   <main>
     <div class="title-block">
-      <h1>Our Plans &amp; Pricing</h1>
+      <h1>Plans &amp; Pricing</h1>
       <p class="subtitle">Choose the perfect plan for your video production needs.</p>
     </div>
 
-    <div class="plans-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 48px;">
-      <div class="pricing-card" style="animation-delay: 0ms;">
+    <div class="plans-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 48px; animation: cardFadeIn var(--dur-base) var(--ease-out) backwards; will-change: opacity, transform;">
+      <div class="pricing-card">
         <div style="font-size: 32px; font-weight: 700; color: var(--gold); margin-bottom: 12px;">1</div>
         <h3>Creators Basics</h3>
         <div class="price"><span class="currency">₹</span>400 – 800</div>
         <p class="description">You provide all photos and the script for the video</p>
-        <button class="length-btn" onclick="toggleLength(this, 'len-1')" style="width: 100%; margin-bottom: 12px;">
-          Length of Video <span class="chevron">▾</span>
-        </button>
-        <ul class="length-list" id="len-1" style="list-style: none; padding: 0; margin: 0; display: none;">
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>30 sec</span><span>₹400</span></li>
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>50 sec</span><span>₹500</span></li>
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>1 min</span><span>₹600</span></li>
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>2 min</span><span>₹700</span></li>
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>3 min</span><span>₹800</span></li>
+        <ul class="features">
+          <li>30 sec — ₹400</li>
+          <li>50 sec — ₹500</li>
+          <li>1 min — ₹600</li>
+          <li>2 min — ₹700</li>
+          <li>3 min — ₹800</li>
         </ul>
       </div>
 
-      <div class="pricing-card" style="animation-delay: 80ms;">
+      <div class="pricing-card">
         <div style="font-size: 32px; font-weight: 700; color: var(--gold); margin-bottom: 12px;">2</div>
         <h3>Visionary Plus</h3>
         <div class="price"><span class="currency">₹</span>800 – 1,500</div>
         <p class="description">Choose whether we create the photo or the script. You provide one photo.</p>
-        <button class="length-btn" onclick="toggleLength(this, 'len-2')" style="width: 100%; margin-bottom: 12px;">
-          Length of Video <span class="chevron">▾</span>
-        </button>
-        <ul class="length-list" id="len-2" style="list-style: none; padding: 0; margin: 0; display: none;">
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>30 sec</span><span>₹800</span></li>
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>50 sec</span><span>₹900</span></li>
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>1 min</span><span>₹1,000</span></li>
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>2 min</span><span>₹1,500</span></li>
+        <ul class="features">
+          <li>30 sec — ₹800</li>
+          <li>50 sec — ₹900</li>
+          <li>1 min — ₹1,000</li>
+          <li>2 min — ₹1,500</li>
         </ul>
       </div>
 
-      <div class="pricing-card" style="animation-delay: 160ms;">
+      <div class="pricing-card">
         <div style="font-size: 32px; font-weight: 700; color: var(--gold); margin-bottom: 12px;">3</div>
         <h3>Empire Builder</h3>
         <div class="price"><span class="currency">₹</span>1,500 – 3,000</div>
         <p class="description">We create both the photos and the script. You provide one photo.</p>
-        <button class="length-btn" onclick="toggleLength(this, 'len-3')" style="width: 100%; margin-bottom: 12px;">
-          Length of Video <span class="chevron">▾</span>
-        </button>
-        <ul class="length-list" id="len-3" style="list-style: none; padding: 0; margin: 0; display: none;">
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>30 sec</span><span>₹1,500</span></li>
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>50 sec</span><span>₹2,000</span></li>
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>1 min</span><span>₹2,500</span></li>
-          <li style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: var(--muted);"><span>2 min</span><span>₹3,000</span></li>
+        <ul class="features">
+          <li>30 sec — ₹1,500</li>
+          <li>50 sec — ₹2,000</li>
+          <li>1 min — ₹2,500</li>
+          <li>2 min — ₹3,000</li>
         </ul>
       </div>
     </div>
@@ -601,13 +509,6 @@
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
-
-    function toggleLength(btn, listId) {
-      const list = document.getElementById(listId);
-      const isOpen = list.style.display === 'block';
-      list.style.display = isOpen ? 'none' : 'block';
-      btn.classList.toggle('open', !isOpen);
-    }
 
     function openGmailApp(e) {
       e.preventDefault();
@@ -641,7 +542,7 @@
       return false;
     }
 
-    document.querySelectorAll('nav.site-nav a').forEach(link => {
+    document.querySelectorAll('.site-nav a').forEach(link => {
       link.addEventListener('click', (e) => {
         const href = link.getAttribute('href');
         if (href === window.location.pathname || href === window.location.href) {

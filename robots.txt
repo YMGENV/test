@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ymgenv.github.io/bysolutions/sitemap.xml

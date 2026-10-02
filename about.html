@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JNVCPGWESS"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-JNVCPGWESS');
+  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Us — BY Solutions YM GENV</title>
+<meta name="description" content="Learn about BY Solutions (YM GENV) — our mission, what we do, and why creators and small businesses choose us for custom video production.">
+<meta name="keywords" content="BY Solutions, YM GENV, about us, video production company, our mission">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://ymgenv.github.io/bysolutions/about.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="About Us | BY Solutions">
+<meta property="og:description" content="Learn about BY Solutions (YM GENV) — our mission, what we do, and why creators and small businesses choose us for custom video production.">
+<meta property="og:url" content="https://ymgenv.github.io/bysolutions/about.html">
+<meta property="og:site_name" content="BY Solutions">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="About Us | BY Solutions">
+<meta name="twitter:description" content="Learn about BY Solutions (YM GENV) — our mission, what we do, and why creators and small businesses choose us for custom video production.">
+
+<style>
+  :root{
+    --bg: #060c1c;
+    --panel: #0d1730;
+    --line: #1d2c52;
+    --ink: #7eb6ff;
+    --muted: #6f86b3;
+    --accent: #5ee0c0;
+    --gold: #e8c468;
+    --dur-fast: 150ms;
+    --dur-base: 250ms;
+    --dur-slow: 400ms;
+    --ease-out: cubic-bezier(0.2, 0.8, 0.4, 1);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(1000px 500px at 15% -5%, rgba(232,196,104,0.10), transparent 60%),
+      radial-gradient(1200px 700px at 85% 0%, rgba(74,131,255,0.18), transparent 55%),
+      radial-gradient(1400px 900px at 50% 110%, rgba(33,76,168,0.25), transparent 60%),
+      linear-gradient(180deg, #060c1c 0%, #0a1530 45%, #081026 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  @keyframes pageEnter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pageExit {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-8px); }
+  }
+
+  @keyframes cardFadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  main{
+    animation: pageEnter var(--dur-base) var(--ease-out) forwards;
+    will-change: opacity, transform;
+  }
+
+  main.exit{
+    animation: pageExit var(--dur-fast) var(--ease-smooth) forwards;
+  }
+
+  header{
+    width:100%;
+    max-width:1000px;
+    padding: 36px 24px 12px;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap:14px;
+  }
+
+  .header-left{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+
+  .site-url{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    letter-spacing: 0.2px;
+    border: 1px solid var(--line);
+    padding: 6px 12px 6px 8px;
+    border-radius: 8px;
+    transition: border-color var(--dur-fast) var(--ease-smooth), color var(--dur-fast) var(--ease-smooth), transform var(--dur-fast) var(--ease-smooth);
+  }
+
+  .site-url:hover{
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .site-url img{
+    height: 26px;
+    width: auto;
+    display:block;
+    background: #ffffff;
+    border-radius: 5px;
+    padding: 3px 5px;
+  }
+
+  .logo-slot{
+    width:48px;
+    height:48px;
+    border-radius:10px;
+    background: transparent;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    color: var(--muted);
+    flex-shrink:0;
+    overflow:hidden;
+  }
+
+  .logo-slot img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+
+  .site-nav{
+    width:100%;
+    max-width:1000px;
+    padding: 0 24px 24px;
+    margin-top: 24px;
+  }
+
+  .nav-inner{
+    display:flex;
+    gap: 0;
+    background: rgba(13,23,48,0.5);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0;
+    overflow:hidden;
+  }
+
+  .site-nav a{
+    flex:1;
+    color: var(--muted);
+    text-decoration:none;
+    font-size:14px;
+    font-weight:500;
+    text-align:center;
+    padding: 12px 16px;
+    border-right: 1px solid var(--line);
+    transition: color var(--dur-fast) var(--ease-smooth), background var(--dur-fast) var(--ease-smooth), transform var(--dur-fast) var(--ease-smooth);
+    position: relative;
+    will-change: transform;
+  }
+
+  .site-nav a:last-child{
+    border-right:none;
+  }
+
+  .site-nav a:hover{
+    background: rgba(94,224,192,0.08);
+    color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .site-nav a.active{
+    background: rgba(94,224,192,0.12);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  main{
+    width:100%;
+    max-width:1000px;
+    padding: 0 24px 60px;
+  }
+
+  .title-block{
+    margin-bottom: 48px;
+  }
+
+  .title-block h1{
+    font-size: 48px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--ink);
+    margin-bottom: 12px;
+    line-height: 1.15;
+  }
+
+  .subtitle{
+    font-size: 16px;
+    color: var(--muted);
+    margin:0;
+    line-height: 1.6;
+  }
+
+  .content-section{
+    margin-bottom: 48px;
+    animation: cardFadeIn var(--dur-base) var(--ease-out) backwards;
+    will-change: opacity, transform;
+  }
+
+  .content-section:nth-of-type(1) { animation-delay: 0ms; }
+  .content-section:nth-of-type(2) { animation-delay: 80ms; }
+  .content-section:nth-of-type(3) { animation-delay: 160ms; }
+
+  .content-section h2{
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+
+  .content-section p{
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+
+  .btn{
+    display: inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: border-color var(--dur-fast) var(--ease-smooth), color var(--dur-fast) var(--ease-smooth), background var(--dur-fast) var(--ease-smooth), transform var(--dur-fast) var(--ease-smooth), box-shadow var(--dur-fast) var(--ease-smooth);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    cursor: pointer;
+    position: relative;
+    will-change: transform;
+  }
+
+  .btn:hover{
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(94,224,192,0.08);
+    transform: translateY(-1px);
+  }
+
+  .btn:active{
+    transform: scale(0.98);
+  }
+
+  .btn-primary{
+    background: linear-gradient(135deg, rgba(232,196,104,0.15), rgba(94,224,192,0.1));
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .btn-primary:hover{
+    border-color: var(--gold);
+    color: var(--gold);
+    background: linear-gradient(135deg, rgba(232,196,104,0.25), rgba(94,224,192,0.15));
+    box-shadow: 0 0 20px rgba(232,196,104,0.2);
+  }
+
+  .actions{
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  footer{
+    width:100%;
+    max-width:1000px;
+    padding: 24px;
+    text-align:center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  @media (max-width: 768px) and (hover: none) {
+    .btn:hover {
+      transform: none;
+    }
+
+    :root {
+      --dur-base: 200ms;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .title-block h1{
+      font-size: 36px;
+    }
+
+    .nav-inner{
+      flex-wrap: wrap;
+    }
+
+    .site-nav a{
+      flex: 0 1 auto;
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <div class="logo-slot"></div>
+    </div>
+    <a href="https://bysolutions.in" class="site-url" target="_blank">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 1L1 5v5c0 4.418 7 5 7 5s7-.582 7-5V5l-7-4z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+      </svg>
+      bysolutions.in
+    </a>
+  </header>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="index.html">Home</a>
+      <a href="about.html" class="active">About Us</a>
+      <a href="plans.html">Plans</a>
+      <a href="video-examples.html">Video Examples</a>
+      <a href="contact.html">Contact Us</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="title-block">
+      <h1>About Us</h1>
+      <p class="subtitle">Powering creativity with AI-driven video production.</p>
+    </div>
+
+    <div class="content-section">
+      <h2>Our Mission</h2>
+      <p>We're building the future of video content creation. Our AI-powered platform transforms ideas into stunning video content in minutes, not hours. We believe everyone should have access to professional video production tools.</p>
+    </div>
+
+    <div class="content-section">
+      <h2>What We Do</h2>
+      <p>BY Solutions specializes in creating high-quality AI-generated videos tailored to your brand. From product demonstrations to marketing campaigns, we deliver professional results that engage your audience and drive conversions.</p>
+    </div>
+
+    <div class="content-section">
+      <h2>Why Choose Us</h2>
+      <p>Our combination of advanced AI technology, expert designers, and dedicated support ensures your videos are not just generated—they're crafted. We're committed to quality, speed, and delivering results that exceed expectations.</p>
+    </div>
+
+    <div class="actions">
+      <a class="btn btn-primary" href="plans.html">Explore Our Plans</a>
+      <a class="btn" href="contact.html">Get in Touch</a>
+    </div>
+  </main>
+
+  <footer>
+    &copy; <span id="year"></span> BY Solutions. All rights reserved. | <a href="https://bysolutions.in" style="color: var(--accent); text-decoration: none;">Visit bysolutions.in</a>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    document.querySelectorAll('.site-nav a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const href = link.getAttribute('href');
+        if (href === window.location.pathname || href === window.location.href) {
+          e.preventDefault();
+        } else {
+          const main = document.querySelector('main');
+          main.classList.add('exit');
+          
+          setTimeout(() => {
+            window.location.href = href;
+          }, 150);
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
